@@ -1,5 +1,5 @@
 
-Welcome to pirogue's documentation!
+Welcome to PyTransifex's documentation!
 ===================================
 
 .. toctree::
