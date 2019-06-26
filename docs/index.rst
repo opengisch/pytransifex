@@ -7,7 +7,7 @@ Welcome to pirogue's documentation!
 .. autosummary::
     :toctree: _autosummary
 
-    pytransifex.api
+    pytransifex.Transifex
     pytransifex.exceptions
 
 Indices and tables
