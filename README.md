@@ -1,5 +1,5 @@
 
-PyTransifex: yet another Python Transifex API
+### PyTransifex: yet another Python Transifex API
 
 Read the documentation: https://opengisch.github.io/pytransifex
 
