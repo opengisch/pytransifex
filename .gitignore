@@ -1,0 +1,9 @@
+# Sphinx documentation
+docs/_build/
+docs/_autosummary/
+
+__pycache__/
+venv/
+
+.idea
+.DS_Store
