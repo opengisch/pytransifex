@@ -349,6 +349,7 @@ class Transifex(object):
 
     def create_language(self, project_slug: str, language_code: str, coordinators: list):
         """
+        Create a new language for the given project
         Parameters
         ----------
         project_slug:
@@ -367,7 +368,8 @@ class Transifex(object):
 
     def coordinator(self, project_slug: str, language_code: str = 'en') -> str:
         """
-        Retruns the coordinator of the the project
+        Return the coordinator of the the project
+
         Parameters
         ----------
         project_slug:
@@ -381,17 +383,15 @@ class Transifex(object):
         return content['coordinators']
 
 
-    def project_exists(self, project_slug):
+    def project_exists(self, project_slug) -> bool:
         """
         Check if there is a project with the given slug registered with
         Transifex
 
+        Parameters
+        ----------
         project_slug
             The project slug
-
-        @return Boolean
-           True is project exists
-           False if not
         """
         url = 'https://api.transifex.com/organizations/{o}/projects/{s}'.format(o=self.organization, s=project_slug)
         response = requests.get(url, auth=self.auth)
