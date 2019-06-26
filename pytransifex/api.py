@@ -365,8 +365,9 @@ class Transifex(object):
         if response.status_code != requests.codes['CREATED']:
             raise PyTransifexException(response)
 
-    def coordinator(self, project_slug: str, language_code: str = 'en'):
+    def coordinator(self, project_slug: str, language_code: str = 'en') -> str:
         """
+        Retruns the coordinator of the the project
         Parameters
         ----------
         project_slug:
