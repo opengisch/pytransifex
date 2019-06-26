@@ -3,8 +3,7 @@
 import unittest
 import os
 
-from pytransifex.api import Transifex
-from pytransifex.exceptions import PyTransifexException
+from pytransifex import Transifex, PyTransifexException
 
 
 class TestTranslation(unittest.TestCase):
