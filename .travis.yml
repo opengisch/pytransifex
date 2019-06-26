@@ -17,7 +17,7 @@ env:
 install: pip install -r requirements.txt
 
 script:
-  - nosetests -v
+  - nose2 -v
   - ./docs/build_deploy.sh  # TODO: move to deploy
 
 deploy:
