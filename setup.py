@@ -1,39 +1,34 @@
 from setuptools import setup
 import sys
 
-python_min_version = (3, 6)
+python_min_version = (3, 7)
 
 if sys.version_info < python_min_version:
-    sys.exit('Pirogue requires at least Python version {vmaj}.{vmin}.\n'
+    sys.exit('pytransifex requires at least Python version {vmaj}.{vmin}.\n'
              'You are currently running this installation with\n\n{curver}'.format(
         vmaj=python_min_version[0],
         vmin=python_min_version[1],
         curver=sys.version))
 
 setup(
-    name = 'pirogue',
+    name = 'pytransifex',
     packages = [
-        'pirogue'
-    ],
-    scripts = [
-        'scripts/pirogue'
+        'pytransifex'
     ],
     version = '[VERSION]',
-    description = 'PostgreSQL view generator',
+    description = 'Yet another Python Transifex API.',
     author = 'Denis Rouzaud',
     author_email = 'denis.rouzaud@gmail.com',
-    url = 'https://github.com/opengisch/pirogue',
-    download_url = 'https://github.com/opengisch/pirogue/archive/[VERSION].tar.gz', # I'll explain this in a second
-    keywords = ['postgres'],
+    url = 'https://github.com/opengisch/pytransifex',
+    download_url = 'https://github.com/opengisch/pytransifex/archive/[VERSION].tar.gz', # I'll explain this in a second
+    keywords = ['Transifex'],
     classifiers = [
-        'Topic :: Database',
+        'Topic :: Software Development :: Localization',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Intended Audience :: System Administrators',
-        'Intended Audience :: Information Technology',
         'Development Status :: 3 - Alpha'
     ],
     install_requires = [
-        'psycopg2-binary>=2.7.3'
     ],
     python_requires=">={vmaj}.{vmin}".format(vmaj=python_min_version[0], vmin=python_min_version[1]),
 )

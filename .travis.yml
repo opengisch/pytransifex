@@ -5,9 +5,10 @@ python:
 
 env:
   global:
+    # transifex_token
+    secure: "jBJCrb5RRYpepXzCW8LnSMgPJFosc7P6Oid/2o0ejUfC0PvCbq//57r4LzpaZWZsXmf3N1tu4onL2nIdC8k9c2rquhWju7y6k4jrrGAbZCe3LhyPMXZMWxwvqf7tk7JOGrJs7EuuBQn6hw0WwzCmKBKhHhdVckS8RuolaRM7LbLQNZxwrl29CVn+2bTrCipZsQ08KPpfoGOQVUTA0TEAUioXcM4S8srrPJZC6q55oxrI7n6dj7rmmizLjSYzgLnL50YU4v1s+QAnbHsfEFRscbewYXDXx6xnkSR/p1pI65ct8O2PiVNgvkxqgfUBFA3BYJaVo/y+CFdHSFqQKCMnUygUW9H2dwuwoTT4V9ijPQ316rCtN4oua51yFNlv1bjqqJzqLoJ+Te9c3uvQ+NpG3+6Pi2W9kvc4G8BSMg9VBzhLttp//1LHeTQymVpSdiqvtFbVZYl3sIGaTaj+XSue0vXCetyXVnYQ73u+MBXXFXS9TA7C7/7uJvYEp14K2wUZxKvnFGB+r7+1+DeTcqv+c4Lp/q1QDUvCUpFrNi4wHBnScnJ3uBiWmDtWAa8zBsIlf/pt/EY82anaYw0NLhnMEKaoBPSE13XlTdXjOqnmDjsOBaCVGpXJcZPN+oorJCK5lM+2Sts0Qy6d2SCgoOqsTXg9HgpxlICIRS7YtT/LQIQ="
 
 install: pip install -r requirements.txt
-
 
 script:
   - nosetests -v
