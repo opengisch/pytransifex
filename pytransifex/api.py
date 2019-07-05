@@ -1,6 +1,7 @@
 #/usr/bin/python3
 
- 
+
+import os
 import codecs
 import requests
 import json
@@ -299,7 +300,8 @@ class Transifex(object):
             The language_code of the file.
             This should be the *Transifex* language code
         path_to_file
-            The path to the translation file which will be saved
+            The path to the translation file which will be saved.
+            If the directory does not exist, it will be automatically created.
 
         Raises
         ------
@@ -313,6 +315,7 @@ class Transifex(object):
         if response.status_code != requests.codes['OK']:
             raise PyTransifexException(response)
         else:
+            os.makedirs(os.path.dirname(path_to_file), exist_ok=True)
             with open(path_to_file, 'wb') as f:
                 for line in response.iter_content():
                     f.write(line)
