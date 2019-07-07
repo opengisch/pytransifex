@@ -238,7 +238,7 @@ class Transifex(object):
             return json.loads(codecs.decode(response.content, 'utf-8'))
 
     def create_translation(self, project_slug, resource_slug, language_code,
-                           path_to_file):
+                           path_to_file) -> dict:
         """
         Creates or updates the translation for the specified language
 
