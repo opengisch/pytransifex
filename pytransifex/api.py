@@ -208,7 +208,7 @@ class Transifex(object):
         resource_slug
             the resource slug
         path_to_file
-            the path to the pofile which will be uploaded
+            the path to the file which will be uploaded
 
         Returns
         -------
@@ -238,7 +238,7 @@ class Transifex(object):
             return json.loads(codecs.decode(response.content, 'utf-8'))
 
     def create_translation(self, project_slug, resource_slug, language_code,
-                        path_to_file):
+                           path_to_file):
         """
         Creates or updates the translation for the specified language
 
