@@ -24,6 +24,7 @@ class Transifex(object):
             defaults to: PO
         """
         self.auth = ('api', api_token)
+        self.api_key = api_token
         self.organization = organization
         self.i18n_type = i18n_type
 
@@ -62,25 +63,45 @@ class Transifex(object):
         if name is None:
             name = slug
 
-        url = 'https://www.transifex.com/api/2/projects/'
+        url = 'https://rest.api.transifex.com/projects'
         data = {
-            'name': name,
-            'slug': slug,
-            'organization': self.organization,
-            'source_language_code': source_language_code,
-            'description': name,
-            'private': private,
-            'repository_url': repository_url
+            'data': {
+                'attributes': {
+                    'name': name,
+                    'slug': slug,
+                    'description': name,
+                    'private': private,
+                    'repository_url': repository_url
+                },
+                'relationships': {
+                    'organization': {
+                        'data': {
+                            'id': 'o:{}'.format(self.organization),
+                            'type': 'organizations'
+                        }
+                    },
+                    'source_language': {
+                        'data': {
+                            "id": "l:{}".format(source_language_code),
+                            "type": "languages"
+                        }
+                    }
+                },
+                'type': 'projects'
+            }
+
         }
         if outsource_project_name is not None:
             data['outsource'] = outsource_project_name
 
         response = requests.post(url,
                                  data=json.dumps(data),
-                                 auth=self.auth,
-                                 headers={'content-type': 'application/json'})
+                                 headers={
+                                     'Content-Type': 'application/vnd.api+json',
+                                     'Authorization': 'Bearer {}'.format(self.api_key)
+                                 })
 
-        if response.status_code != requests.codes['CREATED']:
+        if response.status_code != requests.codes['OK']:
             print('Could not create project with data: {}'.format(data))
             raise PyTransifexException(response)
 
@@ -385,7 +406,6 @@ class Transifex(object):
         content = json.loads(codecs.decode(response.content, 'utf-8'))
         return content['coordinators']
 
-
     def project_exists(self, project_slug) -> bool:
         """
         Check if there is a project with the given slug registered with
@@ -396,8 +416,12 @@ class Transifex(object):
         project_slug
             The project slug
         """
-        url = 'https://api.transifex.com/organizations/{o}/projects/{s}'.format(o=self.organization, s=project_slug)
-        response = requests.get(url, auth=self.auth)
+        url = 'https://rest.api.transifex.com/projects/o:{o}:p:{s}'.format(o=self.organization, s=project_slug)
+        response = requests.get(url,
+                                headers={
+                                    'Content-Type': 'application/vnd.api+json',
+                                    'Authorization': 'Bearer {}'.format(self.api_key)
+                                })
         if response.status_code == requests.codes['OK']:
             return True
         elif response.status_code == requests.codes['NOT_FOUND']:
