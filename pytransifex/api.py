@@ -118,8 +118,8 @@ class Transifex(object):
         ------
         `PyTransifexException`
         """
-        url = 'https://www.transifex.com/api/2/project/{}'.format(project_slug)
-        response = requests.delete(url, auth=self.auth, headers={'content-type': 'application/json'},)
+        url = 'https://rest.api.transifex.com/projects/o:{o}:p:{p}'.format(o=self.organization, p=project_slug)
+        response = requests.delete(url, headers={'Content-Type': 'application/vnd.api+json','Authorization': 'Bearer {}'.format(self.api_key)})
         if response.status_code != requests.codes['OK']:
             raise PyTransifexException(response)
 
