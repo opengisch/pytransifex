@@ -157,7 +157,7 @@ class Transifex(object):
         return json.loads(codecs.decode(response.content, 'utf-8'))
 
     def delete_team(self, team_slug: str):
-        url = 'https://rest.api.transifex.com/projects/o:{o}:t:{t}'.format(o=self.organization, t=team_slug)
+        url = 'https://rest.api.transifex.com/teams/o:{o}:t:{t}'.format(o=self.organization, t=team_slug)
         response = requests.delete(url, headers={'Content-Type': 'application/vnd.api+json','Authorization': 'Bearer {}'.format(self.api_key)})
         if response.status_code != requests.codes['OK']:
             raise PyTransifexException(response)

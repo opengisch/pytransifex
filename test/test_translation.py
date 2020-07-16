@@ -36,7 +36,7 @@ class TestTranslation(unittest.TestCase):
             repository_url='https://www.github.com/opengisch/pytransifex'
         )
 
-        self.assertTrue(self.t.project_exists('pytransifex'))
+        self.assertTrue(self.t.project_exists(self.project_slug))
 
 
 if __name__ == '__main__':
