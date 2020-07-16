@@ -1,0 +1,645 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pytransifex.api &mdash; pytransifex  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> pytransifex
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/pytransifex.Transifex.html">pytransifex.Transifex</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/pytransifex.exceptions.html">pytransifex.exceptions</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pytransifex</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>pytransifex.api</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pytransifex.api</h1><div class="highlight"><pre>
+<span></span><span class="c1">#/usr/bin/python3</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pytransifex.exceptions</span> <span class="kn">import</span> <span class="n">PyTransifexException</span>
+
+
+<div class="viewcode-block" id="Transifex"><a class="viewcode-back" href="../../_autosummary/pytransifex.Transifex.html#pytransifex.Transifex">[docs]</a><span class="k">class</span> <span class="nc">Transifex</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Transifex.__init__"><a class="viewcode-back" href="../../_autosummary/pytransifex.Transifex.html#pytransifex.Transifex.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">organization</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">i18n_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;PO&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes Transifex </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        api_token</span>
+<span class="sd">            the API token to the service</span>
+<span class="sd">        organization</span>
+<span class="sd">            the name of the organization</span>
+<span class="sd">        i18n_type</span>
+<span class="sd">            the type of translation (PO, QT, …)</span>
+<span class="sd">            defaults to: PO</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;api&#39;</span><span class="p">,</span> <span class="n">api_token</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">organization</span> <span class="o">=</span> <span class="n">organization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i18n_type</span> <span class="o">=</span> <span class="n">i18n_type</span></div>
+
+    <span class="k">def</span> <span class="nf">create_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">slug</span><span class="p">,</span>
+                    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">source_language_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;en-gb&#39;</span><span class="p">,</span>
+                    <span class="n">outsource_project_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">private</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="n">repository_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new project on Transifex</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        slug</span>
+<span class="sd">            the project slug</span>
+<span class="sd">        name</span>
+<span class="sd">            the project name, defaults to the project slug</span>
+<span class="sd">        source_language_code</span>
+<span class="sd">            the source language code, defaults to &#39;en-gb&#39;</span>
+<span class="sd">        outsource_project_name</span>
+<span class="sd">            the name of the project to outsource translation team management to</span>
+<span class="sd">        private</span>
+<span class="sd">            controls if this is created as a closed source or open-source</span>
+<span class="sd">            project, defaults to `False`</span>
+<span class="sd">        repository_url</span>
+<span class="sd">            The url for the repository. This is required if private is set to</span>
+<span class="sd">            False</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">           if project was not created properly</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">slug</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://rest.api.transifex.com/projects&#39;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;attributes&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;slug&#39;</span><span class="p">:</span> <span class="n">slug</span><span class="p">,</span>
+                    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;private&#39;</span><span class="p">:</span> <span class="n">private</span><span class="p">,</span>
+                    <span class="s1">&#39;repository_url&#39;</span><span class="p">:</span> <span class="n">repository_url</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;relationships&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;organization&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;o:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">organization</span><span class="p">),</span>
+                            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;organizations&#39;</span>
+                        <span class="p">}</span>
+                    <span class="p">},</span>
+                    <span class="s1">&#39;source_language&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;l:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source_language_code</span><span class="p">),</span>
+                            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;languages&quot;</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;projects&#39;</span>
+            <span class="p">}</span>
+
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">outsource_project_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;outsource&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outsource_project_name</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span>
+                                 <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+                                 <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+                                     <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/vnd.api+json&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_key</span><span class="p">)</span>
+                                 <span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not create project with data: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">delete_project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes the project</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            the project slug</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://rest.api.transifex.com/projects/o:</span><span class="si">{o}</span><span class="s1">:p:</span><span class="si">{p}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">o</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">organization</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">project_slug</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/vnd.api+json&#39;</span><span class="p">,</span><span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_key</span><span class="p">)})</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">list_resources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List all resources in a project</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            the project slug</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of dictionaries with resources info</span>
+<span class="sd">            each dictionary may contain</span>
+<span class="sd">                category</span>
+<span class="sd">                i18n_type</span>
+<span class="sd">                source_language_code</span>
+<span class="sd">                slug</span>
+<span class="sd">                name</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://api.transifex.com/organizations/</span><span class="si">{o}</span><span class="s1">/projects/</span><span class="si">{p}</span><span class="s1">/resources/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">o</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">organization</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">project_slug</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">delete_team</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">team_slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://rest.api.transifex.com/teams/o:</span><span class="si">{o}</span><span class="s1">:t:</span><span class="si">{t}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">o</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">organization</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">team_slug</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/vnd.api+json&#39;</span><span class="p">,</span><span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_key</span><span class="p">)})</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">create_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">project_slug</span><span class="p">,</span>
+                     <span class="n">path_to_file</span><span class="p">,</span>
+                     <span class="n">resource_slug</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">resource_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new resource with the specified slug from the given file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            the project slug</span>
+<span class="sd">        path_to_file</span>
+<span class="sd">            the path to the file which will be uploaded</span>
+<span class="sd">        resource_slug</span>
+<span class="sd">            the resource slug, defaults to a sluggified version of the filename</span>
+<span class="sd">        resource_name</span>
+<span class="sd">            the resource name, defaults to the resource name</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        `IOError`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{p}</span><span class="s1">/resources/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">project_slug</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">resource_name</span> <span class="ow">or</span> <span class="n">resource_slug</span><span class="p">,</span>
+            <span class="s1">&#39;slug&#39;</span><span class="p">:</span> <span class="n">resource_slug</span><span class="p">,</span>
+            <span class="s1">&#39;i18n_type&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">i18n_type</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+            <span class="n">url</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+            <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;CREATED&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">delete_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">,</span> <span class="n">resource_slug</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes the given resource</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            the project slug</span>
+<span class="sd">        resource_slug</span>
+<span class="sd">            the resource slug</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{u}</span><span class="s1">/project/</span><span class="si">{s}</span><span class="s1">/resource/</span><span class="si">{r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">u</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_api_url</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">resource_slug</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;NO_CONTENT&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update_source_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">,</span> <span class="n">resource_slug</span><span class="p">,</span>
+                                  <span class="n">path_to_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the source translation for a give resource</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            the project slug</span>
+<span class="sd">        resource_slug</span>
+<span class="sd">            the resource slug</span>
+<span class="sd">        path_to_file</span>
+<span class="sd">            the path to the file which will be uploaded</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dictionary with info</span>
+<span class="sd">            Info may include keys</span>
+<span class="sd">                strings_added</span>
+<span class="sd">                strings_updated</span>
+<span class="sd">                redirect</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        `IOError`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{s}</span><span class="s1">/resource/</span><span class="si">{r}</span><span class="s1">/content&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">resource_slug</span>
+        <span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+             <span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">create_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">,</span> <span class="n">resource_slug</span><span class="p">,</span> <span class="n">language_code</span><span class="p">,</span>
+                           <span class="n">path_to_file</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates or updates the translation for the specified language</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            the project slug</span>
+<span class="sd">        resource_slug</span>
+<span class="sd">            the resource slug</span>
+<span class="sd">        language_code</span>
+<span class="sd">            the language_code of the file</span>
+<span class="sd">        path_to_file</span>
+<span class="sd">            the path to the file which will be uploaded</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dictionary with info</span>
+<span class="sd">            Info may include keys</span>
+<span class="sd">                strings_added</span>
+<span class="sd">                strings_updated</span>
+<span class="sd">                redirect</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        `IOError`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{s}</span><span class="s1">/resource/</span><span class="si">{r}</span><span class="s1">/translation/</span><span class="si">{l}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">resource_slug</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">language_code</span>
+        <span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+             <span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">project_slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">resource_slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">path_to_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the requested translation, if it exists. The translation is</span>
+<span class="sd">        returned as a serialized string, unless the GET parameter file is</span>
+<span class="sd">        specified.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            The project slug</span>
+<span class="sd">        resource_slug</span>
+<span class="sd">            The resource slug</span>
+<span class="sd">        language_code</span>
+<span class="sd">            The language_code of the file.</span>
+<span class="sd">            This should be the *Transifex* language code</span>
+<span class="sd">        path_to_file</span>
+<span class="sd">            The path to the translation file which will be saved.</span>
+<span class="sd">            If the directory does not exist, it will be automatically created.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        `IOError`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{s}</span><span class="s1">/resource/</span><span class="si">{r}</span><span class="s1">/translation/</span><span class="si">{l}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">resource_slug</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">language_code</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">():</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">list_languages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">,</span> <span class="n">resource_slug</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List all the languages available for a given resource in a project</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            The project slug</span>
+<span class="sd">        resource_slug</span>
+<span class="sd">            The resource slug</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            The language codes which this resource has translations</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        `PyTransifexException`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{s}</span><span class="s1">/resource/</span><span class="si">{r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">resource_slug</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="n">languages</span> <span class="o">=</span> <span class="p">[</span><span class="n">language</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">language</span> <span class="ow">in</span> <span class="n">content</span><span class="p">[</span><span class="s1">&#39;available_languages&#39;</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="n">languages</span>
+
+    <span class="k">def</span> <span class="nf">create_language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coordinators</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new language for the given project</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug:</span>
+<span class="sd">        language_code:</span>
+<span class="sd">        coordinators:</span>
+<span class="sd">            list of coordinators</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{s}</span><span class="s1">/languages&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;language_code&#39;</span><span class="p">:</span> <span class="n">language_code</span><span class="p">,</span> <span class="s1">&#39;coordinators&#39;</span><span class="p">:</span> <span class="n">coordinators</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span>
+                                 <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">},</span>
+                                 <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span>
+                                 <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;CREATED&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">coordinator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;en&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the coordinator of the the project</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug:</span>
+<span class="sd">        language_code:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://www.transifex.com/api/2/project/</span><span class="si">{s}</span><span class="s1">/language/</span><span class="si">{l}</span><span class="s1">/coordinators&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">language_code</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">content</span><span class="p">[</span><span class="s1">&#39;coordinators&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">project_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_slug</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if there is a project with the given slug registered with</span>
+<span class="sd">        Transifex</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        project_slug</span>
+<span class="sd">            The project slug</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://rest.api.transifex.com/projects/o:</span><span class="si">{o}</span><span class="s1">:p:</span><span class="si">{s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">o</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">organization</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">project_slug</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span>
+                                <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+                                    <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/vnd.api+json&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_key</span><span class="p">)</span>
+                                <span class="p">})</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;NOT_FOUND&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">ping</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the connection to the server and the auth credentials</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://api.transifex.com/organizations/</span><span class="si">{}</span><span class="s1">/projects/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">organization</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;OK&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PyTransifexException</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">success</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2019, Denis Rouzaud
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

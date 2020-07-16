@@ -1,0 +1,31 @@
+pytransifex.exceptions
+======================
+
+.. automodule:: pytransifex.exceptions
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      InvalidSlugException
+      PyTransifexException
+      TransifexException
+   
+   
+
+
+

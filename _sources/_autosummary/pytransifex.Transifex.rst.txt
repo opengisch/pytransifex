@@ -1,0 +1,36 @@
+pytransifex.Transifex
+=====================
+
+.. currentmodule:: pytransifex
+
+.. autoclass:: Transifex
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Transifex.__init__
+      ~Transifex.coordinator
+      ~Transifex.create_language
+      ~Transifex.create_project
+      ~Transifex.create_resource
+      ~Transifex.create_translation
+      ~Transifex.delete_project
+      ~Transifex.delete_resource
+      ~Transifex.delete_team
+      ~Transifex.get_translation
+      ~Transifex.list_languages
+      ~Transifex.list_resources
+      ~Transifex.ping
+      ~Transifex.project_exists
+      ~Transifex.update_source_translation
+   
+   
+
+   
+   
+   
