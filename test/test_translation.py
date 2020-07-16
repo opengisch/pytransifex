@@ -12,13 +12,17 @@ class TestTranslation(unittest.TestCase):
         token = os.getenv('TX_TOKEN')
         assert token is not None
         self.t = Transifex(organization='pytransifex', api_token=token)
-        self.project_slug = 'pytransifex'
+        self.project_slug = 'pytransifex-test-project'
         self.project_name = 'PyTransifex Test project'
         self.source_lang = 'fr_FR'
 
     def tearDown(self):
         try:
             self.t.delete_project(self.project_slug)
+        except PyTransifexException:
+            pass
+        try:
+            self.t.delete_team('{}-team'.format(self.project_slug))
         except PyTransifexException:
             pass
 
