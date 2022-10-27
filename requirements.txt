@@ -2,3 +2,5 @@ requests
 sphinx
 sphinx_rtd_theme
 nose2
+transifex-python
+click
