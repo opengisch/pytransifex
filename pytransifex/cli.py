@@ -2,25 +2,36 @@ from typing import Any
 import click
 
 from pytransifex.api import Transifex
+from pytransifex.config import Config
 
 
 def format_args(args: dict[str, Any]) -> dict[str, Any]:
     return {k.replace("-", "_"): v for k, v in args.items()}
 
 
-@click.command()
-@click.argument("f_name")
-@click.option("--dry-run", type=bool)
-@click.option("--outsource-project-name", type=str)
-@click.option("--private", type=bool)
-@click.option("--path-to-file", type=str)
-@click.option("--project-name", type=str)
-@click.option("--project-slug", type=str)
-@click.option("--repository-url", type=str)
-@click.option("--resource-name", type=str)
-@click.option("--resource-slug", type=str)
-@click.option("--source-lang-code", type=str)
-def run_cli(f_name: str, **options):
-    translator = Transifex.get()
-    result = translator.exec(f_name, format_args(options))
-    click.echo(result)
+import click
+
+
+@click.group()
+def cli():
+    pass
+
+
+@click.option("--verbose", is_flag=True, default=False)
+@click.argument("file_name", required=True)
+@cli.command("push", help="Push documentation")
+def push(file_name: str, verbose: bool):
+    click.echo(f"push: {file_name}")
+    if verbose:
+        click.echo("Was it verbose enough?")
+
+
+@click.option("--only-lang", "-l", default="all")
+@click.argument("dir_name", required=True)
+@cli.command("pull", help="Pull documentation")
+def pull(dir_name: str, only_lang: str):
+    click.echo(f"pull: {dir_name}, {only_lang}")
+
+
+if __name__ == "__main__":
+    cli()

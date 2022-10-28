@@ -2,16 +2,19 @@ import unittest
 from click.testing import CliRunner
 
 from pytransifex.config import Config
-from pytransifex.cli import run_cli
+from pytransifex.cli import cli
 from pytransifex.api import Transifex
 
 
 class TestCli(unittest.TestCase):
     def test_cli(self):
         config = Config("token", "organization", "po")
-        _ = Transifex.get(config)
+        _ = Transifex(config)
         runner = CliRunner()
-        result = runner.invoke(run_cli, ["create_project", "--dry-run", "true"])
+        result = runner.invoke(cli, ["pull", "somedir", "-l", "fr"])
+        
+        if result.exit_code != 0:
+            print(result.output)
         assert result.exit_code == 0
 
 

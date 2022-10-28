@@ -3,7 +3,8 @@
 import unittest
 import os
 
-from pytransifex import Config, PyTransifexException
+from pytransifex.config import Config
+from pytransifex.exceptions import PyTransifexException
 from pytransifex.api import Transifex
 
 

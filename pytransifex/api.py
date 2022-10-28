@@ -7,13 +7,14 @@ from types import FunctionType
 
 from pytransifex.config import Config
 from pytransifex.exceptions import PyTransifexException
+from pytransifex.interfaces import IsTranslator
 
 
-class Transifex:
+class Transifex(IsTranslator):
     transifex = None
 
     @classmethod
-    def get(cls, config: None | Config = None) -> "Transifex":
+    def __call__(cls, config: None | Config = None) -> "Transifex":
         if cls.transifex:
             return cls.transifex
         if config:
