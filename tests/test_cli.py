@@ -3,7 +3,7 @@ from click.testing import CliRunner
 
 from pytransifex.config import Config
 from pytransifex.cli import cli
-from pytransifex.api import Transifex
+from pytransifex.api_old import Transifex
 
 
 class TestCli(unittest.TestCase):

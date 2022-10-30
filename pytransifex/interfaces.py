@@ -1,23 +1,16 @@
 from typing import Any
-from abc import abstractclassmethod, abstractmethod, ABC
-
-from pytransifex.config import Config
+from abc import abstractmethod, ABC
 
 
-class IsTranslator(ABC):
+class Tx(ABC):
     # TODO
-    # This interface satisfies the expectations of qgis-plugin-cli
-    # but it falls short of requiring an implementation for methods
-    # that qgis-plugin-cli does not use:
+    # This interface modelled after api.py:Transifex satisfies the expectations of qgis-plugin-cli
+    # but it falls short of requiring an implementation for methods that qgis-plugin-cli does not use:
     #   coordinator, create_translation, delete_project, delete_resource, delete_team
     # The question is whether I should implement them. Is there's a consumer downstream?
 
-    @abstractclassmethod
-    def list_funcs(cls) -> list[str]:
-        raise NotImplementedError
-
     @abstractmethod
-    def exec(self, fn_name: str, args: dict[str, Any]) -> Any:
+    def login(self):
         raise NotImplementedError
 
     @abstractmethod

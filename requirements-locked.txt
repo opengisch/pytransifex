@@ -44,6 +44,8 @@ pyparsing==3.0.9
     # via packaging
 pyseeyou==1.0.2
     # via transifex-python
+python-dotenv==0.21.0
+    # via -r requirements.txt
 pytz==2022.5
     # via
     #   babel

@@ -10,3 +10,4 @@ venv/
 .vscode/settings.json
 Pipfile
 Pipfile.lock
+.env

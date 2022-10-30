@@ -5,7 +5,7 @@ import os
 
 from pytransifex.config import Config
 from pytransifex.exceptions import PyTransifexException
-from pytransifex.api import Transifex
+from pytransifex.api_old import Transifex
 
 
 class TestTranslation(unittest.TestCase):

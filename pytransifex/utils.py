@@ -1,7 +1,7 @@
 from functools import wraps
 
 
-def auth_client(f):
+def ensure_logged_client(f):
     @wraps(f)
     def capture_args(instance, *args, **kwargs):
         if not instance.logged_in:

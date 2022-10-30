@@ -7,28 +7,9 @@ from types import FunctionType
 
 from pytransifex.config import Config
 from pytransifex.exceptions import PyTransifexException
-from pytransifex.interfaces import IsTranslator
 
 
-class Transifex(IsTranslator):
-    transifex = None
-
-    @classmethod
-    def __call__(cls, config: None | Config = None) -> "Transifex":
-        if cls.transifex:
-            return cls.transifex
-        if config:
-            cls.transifex = cls(config)
-            return cls.transifex
-        raise PyTransifexException(
-            "Need to initialize the program with a working configuration"
-        )
-
-    @classmethod
-    @property
-    def list_funcs(cls) -> list[str]:
-        return [n for n, f in cls.__dict__.items() if isinstance(f, FunctionType)]
-
+class Transifex:
     def __init__(self, config: Config):
         """
         Initializes Transifex
@@ -47,24 +28,6 @@ class Transifex(IsTranslator):
         self.api_key = config.api_token
         self.organization = config.organization
         self.i18n_type = config.i18n_type
-
-    def exec(self, fn_name: str, args: dict[str, Any]) -> Any:
-        error = ""
-
-        if not fn_name in self.list_funcs:
-            defined = "\n".join(self.list_funcs)
-            error += f"This function {fn_name} is not defined. Defined are {defined}"
-
-        if "dry_run" in args and args["dry_run"]:
-            return error or f"Dry run: Would be calling {fn_name} with {args}."
-
-        if error:
-            raise PyTransifexException(error)
-
-        try:
-            return getattr(self, fn_name)(**args)
-        except Exception as error:
-            return str(error)
 
     def create_project(
         self,

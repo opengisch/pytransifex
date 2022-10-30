@@ -1,151 +1,146 @@
-from types import FunctionType
 from typing import Any
 from transifex.api import transifex_api as tx_api
+from transifex.api.jsonapi.resources import Resource
 
 from pytransifex.config import Config
-from pytransifex.exceptions import PyTransifexException
-from pytransifex.interfaces import IsTranslator
-from pytransifex.utils import auth_client
-
-base_url: str = "https://rest.api.transifex.com"
+from pytransifex.interfaces import Tx
+from pytransifex.utils import ensure_logged_client
 
 
-class Client(IsTranslator):
-    @classmethod
-    @property
-    def list_funcs(cls) -> list[str]:
-        return [n for n, f in cls.__dict__.items() if isinstance(f, FunctionType)]
+class Client(Tx):
+    """
+    The proper Transifex client expecte by the cli and other consumers.
+    By default instances are created and logged in 'lazyly' -- when creation and login cannot be deferred any longer.
+    Methods defined as "..." are left for further discussion; they are not used anywhere in qgis-plugin-cli.
+    """
 
     def __init__(self, config: Config, defer_login: bool = False):
         """Extract config values, consumes API token against SDK client"""
         self.api_token = config.api_token
+        self.host = config.host
         self.organization = config.organization
         self.i18n_type = config.i18n_type
-        self.client = tx_api
         self.logged_in = False
+        self.api = tx_api
 
         if not defer_login:
             self.login()
 
     def login(self):
-        self.client.setup(auth=self.api_token)
-        self._organization_api_object = self.client.Organization.get(
+        if self.logged_in:
+            return
+
+        self.api.setup(host=self.host, auth=self.api_token)
+        self._organization_api_object = self.api.Organization.get(
             slug=self.organization
         )
         self.logged_in = True
 
-    @auth_client
-    def exec(self, fn_name: str, args: dict[str, Any]) -> Any:
-        """Adapter for this class to be used from the CLI module"""
-        error = ""
-
-        if not fn_name in self.list_funcs:
-            defined = "\n".join(self.list_funcs)
-            error += f"This function {fn_name} is not defined. Defined are {defined}"
-
-        if "dry_run" in args and args["dry_run"]:
-            return error or f"Dry run: Would be calling {fn_name} with {args}."
-
-        if error:
-            raise PyTransifexException(error)
-
-        try:
-            return getattr(self, fn_name)(**args)
-        except Exception as error:
-            return str(error)
-
-    @auth_client
+    @ensure_logged_client
     def create_project(
         self,
         project_slug: str,
         project_name: str | None = None,
-        source_language_code: str = "en-gb",
-        # FIXME: Not sure it's possible to use this param with the new API
-        outsource_project_name: str | None = None,
+        source_language_code: str = "en_GB",
         private: bool = False,
-        repository_url: str | None = None,
-    ):
-        _ = self.client.Project.create(
+        *args,
+        **kwargs,
+    ) -> Resource:
+        """Create a project. args, kwargs are there to absorb unnecessary arguments from consumers."""
+        source_language = self.api.Language.get(code=source_language_code)
+        organization = self._organization_api_object
+
+        return self.api.Project.create(
             name=project_name,
             slug=project_slug,
+            source_language=source_language,
             private=private,
-            organization=self.organization,
-            source_language=source_language_code,
-            repository_url=repository_url,
+            organization=organization,
         )
 
-    @auth_client
+    @ensure_logged_client
+    def get_project(self, project_slug: str) -> Resource:
+        if projects := self._organization_api_object.fetch("projects"):
+            return projects.get(slug=project_slug)
+        raise Exception(f"Project not found: {project_slug}")
+
+    @ensure_logged_client
     def list_resources(self, project_slug: str) -> list[Any]:
         if projects := self._organization_api_object.fetch("projects"):
             return projects.filter(slug=project_slug)
-        return []
+        raise Exception(f"Project not found {project_slug}")
 
-    @auth_client
+    @ensure_logged_client
     def create_resource(
         self,
-        # FIXME
-        # Unused
         project_slug: str,
         path_to_file: str,
         resource_slug: str | None = None,
         resource_name: str | None = None,
     ):
-        # FIXME How to name a to-be-created resource if both resource_slug and resource_name are None?
-        slug = resource_slug or resource_name
-        resource = self.client.Resource.get(slug=slug)
+        if not (resource_slug or resource_name):
+            raise Exception("Please give either a resource_slug or resource_name")
 
-        if not slug:
-            raise PyTransifexException(
-                "Please give either a resource_slug or resource_name"
-            )
+        resource = self.api.Resource.create(name=resource_name, slug=resource_slug)
+        resource.save(project=project_slug)
 
-        if not resource:
-            raise PyTransifexException(
-                f"Unable to find any resource associated with {slug}"
-            )
+        file_handler = open(path_to_file, "r")
+        content = file_handler.read()
+        file_handler.close()
 
-        with open(path_to_file, "r") as handler:
-            content = handler.read()
-            # self.client.Resource.create(...)
-            self.client.ResourceStringsAsyncUpload.upload(resource, content)
+        self.api.ResourceStringsAsyncUpload.upload(resource, content)
 
-    @auth_client
+    @ensure_logged_client
     def update_source_translation(
         self, project_slug: str, resource_slug: str, path_to_file: str
     ):
-        resource = self.client.Resource.get(slug=resource_slug)
+        resource = self.api.Resource.get(slug=resource_slug, project_slug=project_slug)
+        file_handler = open(path_to_file, "r")
+        content = file_handler.read()
+        file_handler.close()
+        self.api.ResourceStringsAsyncUpload(resource, content)
 
-        with open(path_to_file, "r") as handler:
-            content = handler.read()
-            self.client.ResourceTranslationsAsyncUpload(resource, content)
-
-    @auth_client
+    @ensure_logged_client
     def get_translation(
         self, project_slug: str, resource_slug: str, language: str, path_to_file: str
     ):
         ...
 
-    @auth_client
-    def list_languages(self, project_slug: str, resource_slug: str) -> list[Any]:
-        ...
+    @ensure_logged_client
+    def list_languages(self, project_slug: str) -> list[Any]:
+        if projects := self._organization_api_object.fetch("projects"):
+            if project := projects.get(slug=project_slug):
+                return project.fetch("languages")
+            raise Exception(f"Unable to find any data for this project {project_slug}")
+        raise Exception(
+            f"You need at least 1 project to be able to retrieve a list of projects."
+        )
 
-    @auth_client
+    @ensure_logged_client
     def create_language(self, project_slug: str, path_to_file: str, resource_slug: str):
         ...
 
-    @auth_client
+    @ensure_logged_client
     def project_exists(self, project_slug: str) -> bool:
-        if organization := self.client.Organization.get(slug=project_slug):
-            if organization.fetch("projects"):
+        if projects := self._organization_api_object.fetch("projects"):
+            if projects.get(slug=project_slug):
                 return True
-        return False
+            return False
+        raise Exception(
+            f"No project could be found under this organization: {self.organization}"
+        )
 
-    @auth_client
+    @ensure_logged_client
     def ping(self):
         ...
 
 
 class Transifex:
+    """
+    Singleton factory to ensure the client is initialized at most once.
+    Simpler to manage than a solution relying on 'imports being imported once in Python.
+    """
+
     client = None
 
     def __new__(cls, config: Config | None = None, defer_login: bool = False):
@@ -154,6 +149,6 @@ class Transifex:
             if not config:
                 raise Exception("Need to pass config")
 
-            cls.client = Client(config,defer_login)
+            cls.client = Client(config, defer_login)
 
         return cls.client
