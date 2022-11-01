@@ -1,8 +1,8 @@
-from distutils.command.upload import upload
 from typing import Any
+from pathlib import Path
 from transifex.api import transifex_api as tx_api
 from transifex.api.jsonapi.resources import Resource
-from transifex.api.jsonapi import exceptions as json_api_exc
+from transifex.api.jsonapi import exceptions as tx_exc
 
 from pytransifex.config import Config
 from pytransifex.interfaces import Tx
@@ -46,25 +46,29 @@ class Client(Tx):
         private: bool = False,
         *args,
         **kwargs,
-    ) -> Resource:
+    ) -> None | Resource:
         """Create a project. args, kwargs are there to absorb unnecessary arguments from consumers."""
         source_language = self.api.Language.get(code=source_language_code)
         organization = self._organization_api_object
 
-        return self.api.Project.create(
-            name=project_name,
-            slug=project_slug,
-            source_language=source_language,
-            private=private,
-            organization=organization,
-        )
+        try:
+            return self.api.Project.create(
+                name=project_name,
+                slug=project_slug,
+                source_language=source_language,
+                private=private,
+                organization=organization,
+            )
+        except tx_exc.JsonApiException as error:
+            if "already exists" in error.detail:
+                return self.get_project(project_slug=project_slug)
 
     @ensure_login
     def get_project(self, project_slug: str) -> None | Resource:
         if projects := self._organization_api_object.fetch("projects"):
             try:
                 return projects.get(slug=project_slug)
-            except json_api_exc.DoesNotExist:
+            except tx_exc.DoesNotExist:
                 return None
 
     @ensure_login
@@ -79,7 +83,7 @@ class Client(Tx):
     def create_resource(
         self,
         project_slug: str,
-        path_to_file: str,
+        path_to_file: Path | str,
         resource_slug: str | None = None,
         resource_name: str | None = None,
     ):
@@ -105,24 +109,35 @@ class Client(Tx):
 
     @ensure_login
     def update_source_translation(
-        self, project_slug: str, resource_slug: str, path_to_file: str
+        self, project_slug: str, resource_slug: str, path_to_file: Path | str
     ):
-        if resource := self.api.Resource.get(
-            slug=resource_slug, project_slug=project_slug
-        ):
-            with open(path_to_file, "r") as fh:
-                content = fh.read()
-                self.api.ResourceStringsAsyncUpload(resource, content)
-        else:
+        if not "slug" in self._organization_api_object.attributes:
             raise Exception(
-                f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
+                "Unable to fetch resource for this organization; define an 'organization slug' first."
             )
+
+        if project := self.get_project(project_slug=project_slug):
+            if resources := project.fetch("resources"):
+                if resource := resources.get(slug=resource_slug):
+                    with open(path_to_file, "r") as fh:
+                        content = fh.read()
+                        # FIXME
+                        self.api.ResourceStringsAsyncUpload(content, resource=resource)
+                        return
+
+        raise Exception(
+            f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
+        )
 
     @ensure_login
     def get_translation(
-        self, project_slug: str, resource_slug: str, language: str, path_to_file: str
-    ):
-        pass
+        self,
+        project_slug: str,
+        language: str,
+        *args,
+        **kwargs
+    ) -> list[str]:
+        return self.list_languages(project_slug=project_slug)
 
     @ensure_login
     def list_languages(self, project_slug: str) -> list[Any]:
@@ -137,8 +152,17 @@ class Client(Tx):
         )
 
     @ensure_login
-    def create_language(self, project_slug: str, path_to_file: str, resource_slug: str):
-        pass
+    def create_language(
+        self,
+        project_slug: str,
+        language_code: str,
+        coordinators: None | list[Any] = None,
+    ):
+        if project := self.get_project(project_slug=project_slug):
+            project.add("languages", [self.api.Language.get(code=language_code)])
+
+            if coordinators:
+                project.add("coordinators", coordinators)
 
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
