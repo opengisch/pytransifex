@@ -1,3 +1,4 @@
+from distutils.command.upload import upload
 from typing import Any
 from transifex.api import transifex_api as tx_api
 from transifex.api.jsonapi.resources import Resource
@@ -65,7 +66,6 @@ class Client(Tx):
                 return projects.get(slug=project_slug)
             except json_api_exc.DoesNotExist:
                 return None
-        raise Exception(f"Unable to find any project with thus slug: '{project_slug}'")
 
     @ensure_login
     def list_resources(self, project_slug: str) -> list[Resource]:
@@ -86,13 +86,22 @@ class Client(Tx):
         if not (resource_slug or resource_name):
             raise Exception("Please give either a resource_slug or resource_name")
 
-        resource = self.api.Resource.create(name=resource_name, slug=resource_slug)
-        resource.save(project=project_slug)
+        if project := self.get_project(project_slug=project_slug):
+            resource = self.api.Resource.create(
+                project=project,
+                name=resource_name,
+                slug=resource_slug,
+                i18n_format=tx_api.I18nFormat(id=self.i18n_type),
+            )
 
-        file_handler = open(path_to_file, "r")
-        content = file_handler.read()
-        file_handler.close()
-        self.api.ResourceStringsAsyncUpload.upload(resource, content)
+            with open(path_to_file, "r") as fh:
+                content = fh.read()
+                self.api.ResourceStringsAsyncUpload.upload(content, resource=resource)
+
+        else:
+            raise Exception(
+                f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
+            )
 
     @ensure_login
     def update_source_translation(
@@ -101,10 +110,9 @@ class Client(Tx):
         if resource := self.api.Resource.get(
             slug=resource_slug, project_slug=project_slug
         ):
-            file_handler = open(path_to_file, "r")
-            content = file_handler.read()
-            file_handler.close()
-            self.api.ResourceStringsAsyncUpload(resource, content)
+            with open(path_to_file, "r") as fh:
+                content = fh.read()
+                self.api.ResourceStringsAsyncUpload(resource, content)
         else:
             raise Exception(
                 f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
