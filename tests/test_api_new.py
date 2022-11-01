@@ -3,8 +3,6 @@ import unittest
 from pytransifex.config import Config
 from pytransifex.api_new import Transifex
 from pytransifex.interfaces import Tx
-from transifex.api.jsonapi.exceptions import JsonApiException
-from transifex.api.jsonapi.resources import Resource
 
 
 class TestNewApi(unittest.TestCase):
@@ -17,31 +15,23 @@ class TestNewApi(unittest.TestCase):
         self.resource_name = "Test Resource FR"
         self.path_to_file = "./test_resource_fr.po"
 
-    def test_new_api_satisfies_protocol(self):
+        if project := self.tx.get_project(project_slug=self.project_slug):
+            project.delete()
+
+    def test_new_api_satisfies_abc(self):
         assert isinstance(self.tx, Tx)
 
     def test_create_project(self):
-        resource: None | Resource = None
-        try:
-            resource = self.tx.create_project(
-                project_name=self.project_name,
-                project_slug=self.project_slug,
-                private=True,
-            )
-            assert True
-
-        except JsonApiException as error:
-            if "already exists" in error.detail:
-                if project := self.tx.get_project(project_slug=self.project_slug):
-                    project.delete()
-
-        finally:
-            if resource:
-                resource.delete()
+        _ = self.tx.create_project(
+            project_name=self.project_name,
+            project_slug=self.project_slug,
+            private=True,
+        )
+        assert True
 
     def test_list_resources(self):
-        resources = self.tx.list_resources(project_slug=self.project_slug)
-        assert resources is not None
+        _ = self.tx.list_resources(project_slug=self.project_slug)
+        assert True
 
     def test_create_resource(self):
         self.tx.create_resource(

@@ -1,17 +1,17 @@
 from typing import Any
 from transifex.api import transifex_api as tx_api
 from transifex.api.jsonapi.resources import Resource
+from transifex.api.jsonapi import exceptions as json_api_exc
 
 from pytransifex.config import Config
 from pytransifex.interfaces import Tx
-from pytransifex.utils import ensure_logged_client
+from pytransifex.utils import ensure_login
 
 
 class Client(Tx):
     """
-    The proper Transifex client expecte by the cli and other consumers.
-    By default instances are created and logged in 'lazyly' -- when creation and login cannot be deferred any longer.
-    Methods defined as "..." are left for further discussion; they are not used anywhere in qgis-plugin-cli.
+    The proper Transifex client expected by the cli and other consumers.
+    By default instances are created and logged in 'lazyly' -- when creation or login cannot be deferred any longer.
     """
 
     def __init__(self, config: Config, defer_login: bool = False):
@@ -36,7 +36,7 @@ class Client(Tx):
         )
         self.logged_in = True
 
-    @ensure_logged_client
+    @ensure_login
     def create_project(
         self,
         project_slug: str,
@@ -58,19 +58,24 @@ class Client(Tx):
             organization=organization,
         )
 
-    @ensure_logged_client
-    def get_project(self, project_slug: str) -> Resource:
+    @ensure_login
+    def get_project(self, project_slug: str) -> None | Resource:
         if projects := self._organization_api_object.fetch("projects"):
-            return projects.get(slug=project_slug)
-        raise Exception(f"Project not found: {project_slug}")
+            try:
+                return projects.get(slug=project_slug)
+            except json_api_exc.DoesNotExist:
+                return None
+        raise Exception(f"Unable to find any project with thus slug: '{project_slug}'")
 
-    @ensure_logged_client
-    def list_resources(self, project_slug: str) -> list[Any]:
+    @ensure_login
+    def list_resources(self, project_slug: str) -> list[Resource]:
         if projects := self._organization_api_object.fetch("projects"):
             return projects.filter(slug=project_slug)
-        raise Exception(f"Project not found {project_slug}")
+        raise Exception(
+            f"Unable to find any project under this organization: '{self.organization}'"
+        )
 
-    @ensure_logged_client
+    @ensure_login
     def create_resource(
         self,
         project_slug: str,
@@ -87,52 +92,59 @@ class Client(Tx):
         file_handler = open(path_to_file, "r")
         content = file_handler.read()
         file_handler.close()
-
         self.api.ResourceStringsAsyncUpload.upload(resource, content)
 
-    @ensure_logged_client
+    @ensure_login
     def update_source_translation(
         self, project_slug: str, resource_slug: str, path_to_file: str
     ):
-        resource = self.api.Resource.get(slug=resource_slug, project_slug=project_slug)
-        file_handler = open(path_to_file, "r")
-        content = file_handler.read()
-        file_handler.close()
-        self.api.ResourceStringsAsyncUpload(resource, content)
+        if resource := self.api.Resource.get(
+            slug=resource_slug, project_slug=project_slug
+        ):
+            file_handler = open(path_to_file, "r")
+            content = file_handler.read()
+            file_handler.close()
+            self.api.ResourceStringsAsyncUpload(resource, content)
+        else:
+            raise Exception(
+                f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
+            )
 
-    @ensure_logged_client
+    @ensure_login
     def get_translation(
         self, project_slug: str, resource_slug: str, language: str, path_to_file: str
     ):
-        ...
+        pass
 
-    @ensure_logged_client
+    @ensure_login
     def list_languages(self, project_slug: str) -> list[Any]:
         if projects := self._organization_api_object.fetch("projects"):
             if project := projects.get(slug=project_slug):
                 return project.fetch("languages")
-            raise Exception(f"Unable to find any data for this project {project_slug}")
+            raise Exception(
+                f"Unable to find any project with this slug: '{project_slug}'"
+            )
         raise Exception(
-            f"You need at least 1 project to be able to retrieve a list of projects."
+            f"Unable to find any project under this organization: '{self.organization}'"
         )
 
-    @ensure_logged_client
+    @ensure_login
     def create_language(self, project_slug: str, path_to_file: str, resource_slug: str):
-        ...
+        pass
 
-    @ensure_logged_client
+    @ensure_login
     def project_exists(self, project_slug: str) -> bool:
         if projects := self._organization_api_object.fetch("projects"):
             if projects.get(slug=project_slug):
                 return True
             return False
         raise Exception(
-            f"No project could be found under this organization: {self.organization}"
+            f"No project could be found under this organization: '{self.organization}'"
         )
 
-    @ensure_logged_client
+    @ensure_login
     def ping(self):
-        ...
+        pass
 
 
 class Transifex:

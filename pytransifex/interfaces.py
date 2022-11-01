@@ -10,10 +10,6 @@ class Tx(ABC):
     # The question is whether I should implement them. Is there's a consumer downstream?
 
     @abstractmethod
-    def login(self):
-        raise NotImplementedError
-
-    @abstractmethod
     def create_project(
         self,
         project_slug: str,

@@ -1,7 +1,6 @@
 from os import environ
 from typing import NamedTuple
 from dotenv import load_dotenv
-from pytransifex.exceptions import PyTransifexException
 
 
 class Config(NamedTuple):
@@ -19,7 +18,7 @@ class Config(NamedTuple):
         i18n_type = environ.get("I18N_TYPE", "PO")
 
         if any(not v for v in [token, organization, i18n_type]):
-            raise PyTransifexException(
+            raise Exception(
                 "Envars 'TX_TOKEN' and 'ORGANIZATION' must be set to non-empty values. Aborting now."
             )
 
