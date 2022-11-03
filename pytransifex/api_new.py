@@ -87,7 +87,7 @@ class Client(Tx):
     def create_resource(
         self,
         project_slug: str,
-        path_to_file: Path | str,
+        path_to_file: Path,
         resource_slug: str | None = None,
         resource_name: str | None = None,
     ):
@@ -114,7 +114,7 @@ class Client(Tx):
 
     @ensure_login
     def update_source_translation(
-        self, project_slug: str, resource_slug: str, path_to_file: Path | str
+        self, project_slug: str, resource_slug: str, path_to_file: Path
     ):
         """
         Update the translation strings for the given resource using the content of the file
@@ -130,8 +130,9 @@ class Client(Tx):
                 if resource := resources.get(slug=resource_slug):
                     with open(path_to_file, "r") as fh:
                         content = fh.read()
-                        # FIXME
-                        self.api.ResourceStringsAsyncUpload(content, resource=resource)
+                        self.api.ResourceStringsAsyncUpload.upload(
+                            content, resource=resource
+                        )
                         return
 
         raise Exception(
@@ -144,20 +145,27 @@ class Client(Tx):
         project_slug: str,
         resource_slug,
         language_code: str,
-        path_to_file: Path | str,
+        path_to_file: Path,
     ):
         """Fetch the resources matching the language given as parameter for the project"""
+        # resource_id = f"o:{self.organization}:p:{project_slug}:r:{resource_slug}"
+        language = self.api.Language.get(code=language_code)
         if project := self.get_project(project_slug=project_slug):
-            if resource := project.get(resource_slug=resource_slug):
-                url = self.api.ResourceTranslationsAsyncDownload.download(
-                    resource=resource, language=language_code
-                )
-                translated_content = requests.get(url).text
-                with open(path_to_file, "w") as fh:
-                    fh.write(translated_content)
+            if resources := project.fetch("resources"):
+                if resource := resources.get(slug=resource_slug):
+                    url = self.api.ResourceTranslationsAsyncDownload.download(
+                        resource=resource, language=language
+                    )
+                    translated_content = requests.get(url).text
+                    with open(path_to_file, "w") as fh:
+                        fh.write(translated_content)
+                else:
+                    raise Exception(
+                        f"Unable to find any resource with this slug: '{resource_slug}'"
+                    )
             else:
                 raise Exception(
-                    f"Unable to find any resource with this slug: '{resource_slug}'"
+                    f"Unable to find any resource for this project: '{project_slug}'"
                 )
         else:
             raise Exception(

@@ -26,11 +26,6 @@ class TestNewApi(unittest.TestCase):
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
 
-    @classmethod
-    def tearDownClass(cls):
-        if project := cls.tx.get_project(project_slug=cls.project_slug):
-            project.delete()
-
     def test1_new_api_satisfies_abc(self):
         assert isinstance(self.tx, Tx)
 
