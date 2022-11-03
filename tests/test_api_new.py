@@ -60,7 +60,12 @@ class TestNewApi(unittest.TestCase):
         assert True
 
     def test6_get_translation(self):
-        translation = self.tx.get_translation(project_slug=self.project_slug, language="fr_CH")
+        translation = self.tx.get_translation(
+            project_slug=self.project_slug,
+            resource_slug=self.resource_slug,
+            language_code="fr_CH",
+            path_to_file=self.path_to_file,
+        )
         assert translation
 
     def test7_list_languages(self):

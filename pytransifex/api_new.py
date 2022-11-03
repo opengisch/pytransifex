@@ -1,3 +1,5 @@
+import requests
+
 from typing import Any
 from pathlib import Path
 from transifex.api import transifex_api as tx_api
@@ -65,6 +67,7 @@ class Client(Tx):
 
     @ensure_login
     def get_project(self, project_slug: str) -> None | Resource:
+        """Fetches the project matching the given slug"""
         if projects := self._organization_api_object.fetch("projects"):
             try:
                 return projects.get(slug=project_slug)
@@ -73,6 +76,7 @@ class Client(Tx):
 
     @ensure_login
     def list_resources(self, project_slug: str) -> list[Resource]:
+        """List all resources for the project passed as argument"""
         if projects := self._organization_api_object.fetch("projects"):
             return projects.filter(slug=project_slug)
         raise Exception(
@@ -87,6 +91,7 @@ class Client(Tx):
         resource_slug: str | None = None,
         resource_name: str | None = None,
     ):
+        """Create a resource using the given file contents, slugs and names"""
         if not (resource_slug or resource_name):
             raise Exception("Please give either a resource_slug or resource_name")
 
@@ -111,6 +116,10 @@ class Client(Tx):
     def update_source_translation(
         self, project_slug: str, resource_slug: str, path_to_file: Path | str
     ):
+        """
+        Update the translation strings for the given resource using the content of the file
+        passsed as argument
+        """
         if not "slug" in self._organization_api_object.attributes:
             raise Exception(
                 "Unable to fetch resource for this organization; define an 'organization slug' first."
@@ -133,14 +142,34 @@ class Client(Tx):
     def get_translation(
         self,
         project_slug: str,
-        language: str,
-        *args,
-        **kwargs
-    ) -> list[str]:
-        return self.list_languages(project_slug=project_slug)
+        resource_slug,
+        language_code: str,
+        path_to_file: Path | str,
+    ):
+        """Fetch the resources matching the language given as parameter for the project"""
+        if project := self.get_project(project_slug=project_slug):
+            if resource := project.get(resource_slug=resource_slug):
+                url = self.api.ResourceTranslationsAsyncDownload.download(
+                    resource=resource, language=language_code
+                )
+                translated_content = requests.get(url).text
+                with open(path_to_file, "w") as fh:
+                    fh.write(translated_content)
+            else:
+                raise Exception(
+                    f"Unable to find any resource with this slug: '{resource_slug}'"
+                )
+        else:
+            raise Exception(
+                f"Couldn't find any project with this slug: '{project_slug}'"
+            )
 
     @ensure_login
     def list_languages(self, project_slug: str) -> list[Any]:
+        """
+        List all languages for which there is at least 1 resource registered
+        under the parameterised project
+        """
         if projects := self._organization_api_object.fetch("projects"):
             if project := projects.get(slug=project_slug):
                 return project.fetch("languages")
@@ -158,6 +187,7 @@ class Client(Tx):
         language_code: str,
         coordinators: None | list[Any] = None,
     ):
+        """Create a new language resource in the remote Transifex repository"""
         if project := self.get_project(project_slug=project_slug):
             project.add("languages", [self.api.Language.get(code=language_code)])
 
@@ -166,6 +196,7 @@ class Client(Tx):
 
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
+        """Check if the project exists in the remote Transifex repository"""
         if projects := self._organization_api_object.fetch("projects"):
             if projects.get(slug=project_slug):
                 return True
@@ -176,6 +207,10 @@ class Client(Tx):
 
     @ensure_login
     def ping(self):
+        """
+        Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
+        There is no need to ping the server on the current implementation, as connection is handled by the SDK
+        """
         pass
 
 
