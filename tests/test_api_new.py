@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-from pytransifex.config import Config
 from pytransifex.api_new import Transifex
 from pytransifex.interfaces import Tx
 
@@ -9,8 +8,7 @@ from pytransifex.interfaces import Tx
 class TestNewApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        config = Config.from_env()
-        cls.tx = Transifex(config, defer_login=True)
+        cls.tx = Transifex(defer_login=True)
         cls.project_slug = "test_project_pytransifex"
         cls.project_name = "Test Project PyTransifex"
         cls.resource_slug = "test_resource_fr"
@@ -29,6 +27,7 @@ class TestNewApi(unittest.TestCase):
     def test1_new_api_satisfies_abc(self):
         assert isinstance(self.tx, Tx)
 
+    """
     def test2_create_project(self):
         # Done in setUpClass
         pass
@@ -77,6 +76,21 @@ class TestNewApi(unittest.TestCase):
     def test10_ping(self):
         self.tx.ping()
         assert True
+    """
+
+    def test11_stats(self):
+        stats = self.tx.get_translation_stats(project_slug=self.project_slug)
+        print(dir(stats))
+        print(str(stats))
+        assert stats
+
+    """
+    def test12_stats(self):
+        self.tx.get_translation_stats(project_slug=self.project_slug)
+    
+    def test13_stats(self):
+        self.tx.get_translation_stats(project_slug=self.project_slug)
+    """
 
 
 if __name__ == "__main__":

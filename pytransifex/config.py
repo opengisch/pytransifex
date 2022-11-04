@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 
 class Config(NamedTuple):
     api_token: str
-    organization: str
+    organization_name: str
     i18n_type: str
-    host = "https://rest.api.transifex.com"
+    host_name = "https://rest.api.transifex.com"
 
     @classmethod
     def from_env(cls) -> "Config":

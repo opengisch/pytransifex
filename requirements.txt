@@ -5,3 +5,5 @@ nose2
 transifex-python
 click
 python-dotenv
+aiohttp
+aiofiles

@@ -4,11 +4,12 @@ from typing import Any
 from pathlib import Path
 from transifex.api import transifex_api as tx_api
 from transifex.api.jsonapi.resources import Resource
-from transifex.api.jsonapi import exceptions as tx_exc
+from transifex.api.jsonapi import JsonApiException
+from transifex.api.jsonapi.exceptions import DoesNotExist
 
 from pytransifex.config import Config
 from pytransifex.interfaces import Tx
-from pytransifex.utils import ensure_login
+from pytransifex.utils import ensure_login, map_async
 
 
 class Client(Tx):
@@ -20,8 +21,8 @@ class Client(Tx):
     def __init__(self, config: Config, defer_login: bool = False):
         """Extract config values, consumes API token against SDK client"""
         self.api_token = config.api_token
-        self.host = config.host
-        self.organization = config.organization
+        self.host = config.host_name
+        self.organization_name = config.organization_name
         self.i18n_type = config.i18n_type
         self.logged_in = False
         self.api = tx_api
@@ -33,11 +34,14 @@ class Client(Tx):
         if self.logged_in:
             return
 
+        # Authentication
         self.api.setup(host=self.host, auth=self.api_token)
-        self._organization_api_object = self.api.Organization.get(
-            slug=self.organization
-        )
         self.logged_in = True
+
+        # Saving organization and projects to avoid round-trips
+        organization = self.api.Organization.get(slug=self.organization_name)
+        self.projects = organization.fetch("projects")
+        self.organization = organization
 
     @ensure_login
     def create_project(
@@ -51,7 +55,6 @@ class Client(Tx):
     ) -> None | Resource:
         """Create a project. args, kwargs are there to absorb unnecessary arguments from consumers."""
         source_language = self.api.Language.get(code=source_language_code)
-        organization = self._organization_api_object
 
         try:
             return self.api.Project.create(
@@ -59,26 +62,26 @@ class Client(Tx):
                 slug=project_slug,
                 source_language=source_language,
                 private=private,
-                organization=organization,
+                organization=self.organization,
             )
-        except tx_exc.JsonApiException as error:
+        except JsonApiException as error:
             if "already exists" in error.detail:
                 return self.get_project(project_slug=project_slug)
 
     @ensure_login
     def get_project(self, project_slug: str) -> None | Resource:
         """Fetches the project matching the given slug"""
-        if projects := self._organization_api_object.fetch("projects"):
+        if self.projects:
             try:
-                return projects.get(slug=project_slug)
-            except tx_exc.DoesNotExist:
+                return self.projects.get(slug=project_slug)
+            except DoesNotExist:
                 return None
 
     @ensure_login
     def list_resources(self, project_slug: str) -> list[Resource]:
         """List all resources for the project passed as argument"""
-        if projects := self._organization_api_object.fetch("projects"):
-            return projects.filter(slug=project_slug)
+        if self.projects:
+            return self.projects.filter(slug=project_slug)
         raise Exception(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
@@ -120,7 +123,7 @@ class Client(Tx):
         Update the translation strings for the given resource using the content of the file
         passsed as argument
         """
-        if not "slug" in self._organization_api_object.attributes:
+        if not "slug" in self.organization.attributes:
             raise Exception(
                 "Unable to fetch resource for this organization; define an 'organization slug' first."
             )
@@ -148,7 +151,6 @@ class Client(Tx):
         path_to_file: Path,
     ):
         """Fetch the resources matching the language given as parameter for the project"""
-        # resource_id = f"o:{self.organization}:p:{project_slug}:r:{resource_slug}"
         language = self.api.Language.get(code=language_code)
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
@@ -178,8 +180,8 @@ class Client(Tx):
         List all languages for which there is at least 1 resource registered
         under the parameterised project
         """
-        if projects := self._organization_api_object.fetch("projects"):
-            if project := projects.get(slug=project_slug):
+        if self.projects:
+            if project := self.projects.get(slug=project_slug):
                 return project.fetch("languages")
             raise Exception(
                 f"Unable to find any project with this slug: '{project_slug}'"
@@ -205,8 +207,8 @@ class Client(Tx):
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
         """Check if the project exists in the remote Transifex repository"""
-        if projects := self._organization_api_object.fetch("projects"):
-            if projects.get(slug=project_slug):
+        if self.projects:
+            if self.projects.get(slug=project_slug):
                 return True
             return False
         raise Exception(
@@ -221,6 +223,45 @@ class Client(Tx):
         """
         pass
 
+    @ensure_login
+    def get_translation_stats(self, project_slug: str) -> dict[str, Any]:
+        if self.projects:
+            if project := self.projects.get(slug=project_slug):
+                return self.api.ResourceLanguageStats(project=project).to_dict()
+        raise Exception(f"Unable to find translation for this project {project_slug}")
+
+    @ensure_login
+    def push(
+        self, project_slug: str, resource_slugs: list[str], path_to_files: list[str]
+    ):
+        args = [
+            tuple([pro, res, path])
+            for pro, res, path in zip([project_slug], resource_slugs, path_to_files)
+        ]
+        map_async(
+            fn=self.update_source_translation,
+            args=args,
+        )
+
+    @ensure_login
+    def pull(
+        self,
+        project_slug: str,
+        resource_slugs: list[str],
+        language_codes: list[str],
+        path_to_files: list[str],
+    ):
+        args = [
+            tuple([pro, res, lco, path])
+            for pro, res, lco, path in zip(
+                [project_slug], resource_slugs, language_codes, path_to_files
+            )
+        ]
+        map_async(
+            fn=self.get_translation,
+            args=args,
+        )
+
 
 class Transifex:
     """
@@ -230,12 +271,7 @@ class Transifex:
 
     client = None
 
-    def __new__(cls, config: Config | None = None, defer_login: bool = False):
+    def __new__(cls, defer_login: bool = False):
         if not cls.client:
-
-            if not config:
-                raise Exception("Need to pass config")
-
-            cls.client = Client(config, defer_login)
-
+            cls.client = Client(Config.from_env(), defer_login)
         return cls.client
