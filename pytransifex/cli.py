@@ -1,4 +1,5 @@
 from typing import Any
+
 import click
 
 from pytransifex.api_new import Transifex

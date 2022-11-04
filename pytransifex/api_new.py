@@ -1,11 +1,11 @@
-import requests
-
-from typing import Any
 from pathlib import Path
+from typing import Any
+
+import requests
 from transifex.api import transifex_api as tx_api
-from transifex.api.jsonapi.resources import Resource
 from transifex.api.jsonapi import JsonApiException
 from transifex.api.jsonapi.exceptions import DoesNotExist
+from transifex.api.jsonapi.resources import Resource
 
 from pytransifex.config import Config
 from pytransifex.interfaces import Tx

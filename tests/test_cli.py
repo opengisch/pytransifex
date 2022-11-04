@@ -1,9 +1,10 @@
 import unittest
+
 from click.testing import CliRunner
 
-from pytransifex.config import Config
-from pytransifex.cli import cli
 from pytransifex.api_old import Transifex
+from pytransifex.cli import cli
+from pytransifex.config import Config
 
 
 class TestCli(unittest.TestCase):
