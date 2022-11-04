@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Iterable, TypeAlias
+from typing import Any, Callable, Iterable
 from asyncio import run, gather, get_running_loop
-from aiofiles import open
-from aiohttp import ClientSession
 from functools import wraps
 from inspect import iscoroutinefunction
 
@@ -17,7 +15,6 @@ def ensure_login(f):
     return capture_args
 
 
-
 def map_async(
     *,
     fn: Callable | None = None,
@@ -27,6 +24,8 @@ def map_async(
     async def closure() -> Iterable[Any]:
         tasks = []
         if iscoroutinefunction(fn) and args:
+            if partials:
+                raise Exception("Partials don't work with coroutine functions!")
             tasks = [fn(*a) for a in args]
         else:
             loop = get_running_loop()
@@ -34,10 +33,14 @@ def map_async(
                 tasks = [loop.run_in_executor(None, p) for p in partials]
             elif fn and args:
                 tasks = [loop.run_in_executor(None, fn, *a) for a in args]
+            else:
+                raise Exception("Either partials or fn and args!")
         return await gather(*tasks)
 
     return run(closure())
 
+"""
+import aiofiles, aiohttp
 
 async def write_file_async(path: Path, contents: str) -> None:
     async with open(path, "w") as fh:
@@ -51,3 +54,4 @@ async def get_async_from_url(urls: list[str]) -> list[str]:
 
     async with ClientSession() as session:
         return await gather(*[get_text(session, url) for url in urls])
+"""

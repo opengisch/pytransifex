@@ -25,7 +25,6 @@ class Client(Tx):
         self.organization_name = config.organization_name
         self.i18n_type = config.i18n_type
         self.logged_in = False
-        self.api = tx_api
 
         if not defer_login:
             self.login()
@@ -35,13 +34,14 @@ class Client(Tx):
             return
 
         # Authentication
-        self.api.setup(host=self.host, auth=self.api_token)
+        tx_api.setup(host=self.host, auth=self.api_token)
         self.logged_in = True
 
         # Saving organization and projects to avoid round-trips
-        organization = self.api.Organization.get(slug=self.organization_name)
+        organization = tx_api.Organization.get(slug=self.organization_name)
         self.projects = organization.fetch("projects")
         self.organization = organization
+        print(f"Logged in as organization: {self.organization_name}")
 
     @ensure_login
     def create_project(
@@ -54,16 +54,18 @@ class Client(Tx):
         **kwargs,
     ) -> None | Resource:
         """Create a project. args, kwargs are there to absorb unnecessary arguments from consumers."""
-        source_language = self.api.Language.get(code=source_language_code)
+        source_language = tx_api.Language.get(code=source_language_code)
 
         try:
-            return self.api.Project.create(
+            res = tx_api.Project.create(
                 name=project_name,
                 slug=project_slug,
                 source_language=source_language,
                 private=private,
                 organization=self.organization,
             )
+            print("Project created!")
+            return res
         except JsonApiException as error:
             if "already exists" in error.detail:
                 return self.get_project(project_slug=project_slug)
@@ -73,7 +75,9 @@ class Client(Tx):
         """Fetches the project matching the given slug"""
         if self.projects:
             try:
-                return self.projects.get(slug=project_slug)
+                res = self.projects.get(slug=project_slug)
+                print("Got the project!")
+                return res
             except DoesNotExist:
                 return None
 
@@ -81,7 +85,9 @@ class Client(Tx):
     def list_resources(self, project_slug: str) -> list[Resource]:
         """List all resources for the project passed as argument"""
         if self.projects:
-            return self.projects.filter(slug=project_slug)
+            res = self.projects.filter(slug=project_slug)
+            print("Obtained these resources")
+            return res
         raise Exception(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
@@ -99,7 +105,7 @@ class Client(Tx):
             raise Exception("Please give either a resource_slug or resource_name")
 
         if project := self.get_project(project_slug=project_slug):
-            resource = self.api.Resource.create(
+            resource = tx_api.Resource.create(
                 project=project,
                 name=resource_name,
                 slug=resource_slug,
@@ -108,8 +114,8 @@ class Client(Tx):
 
             with open(path_to_file, "r") as fh:
                 content = fh.read()
-                self.api.ResourceStringsAsyncUpload.upload(content, resource=resource)
-
+                tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
+                print(f"Resource created: {resource_slug or resource_name}")
         else:
             raise Exception(
                 f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
@@ -133,9 +139,10 @@ class Client(Tx):
                 if resource := resources.get(slug=resource_slug):
                     with open(path_to_file, "r") as fh:
                         content = fh.read()
-                        self.api.ResourceStringsAsyncUpload.upload(
+                        tx_api.ResourceStringsAsyncUpload.upload(
                             content, resource=resource
                         )
+                        print(f"Source updated for resource: {resource_slug}")
                         return
 
         raise Exception(
@@ -151,16 +158,19 @@ class Client(Tx):
         path_to_file: Path,
     ):
         """Fetch the resources matching the language given as parameter for the project"""
-        language = self.api.Language.get(code=language_code)
+        language = tx_api.Language.get(code=language_code)
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
                 if resource := resources.get(slug=resource_slug):
-                    url = self.api.ResourceTranslationsAsyncDownload.download(
+                    url = tx_api.ResourceTranslationsAsyncDownload.download(
                         resource=resource, language=language
                     )
                     translated_content = requests.get(url).text
                     with open(path_to_file, "w") as fh:
                         fh.write(translated_content)
+                    print(
+                        f"Translations downloaded and written to file (resource: {resource_slug})"
+                    )
                 else:
                     raise Exception(
                         f"Unable to find any resource with this slug: '{resource_slug}'"
@@ -182,7 +192,9 @@ class Client(Tx):
         """
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                return project.fetch("languages")
+                languages = project.fetch("languages")
+                print(f"Obtained these languages")
+                return languages
             raise Exception(
                 f"Unable to find any project with this slug: '{project_slug}'"
             )
@@ -199,10 +211,12 @@ class Client(Tx):
     ):
         """Create a new language resource in the remote Transifex repository"""
         if project := self.get_project(project_slug=project_slug):
-            project.add("languages", [self.api.Language.get(code=language_code)])
+            project.add("languages", [tx_api.Language.get(code=language_code)])
 
             if coordinators:
                 project.add("coordinators", coordinators)
+
+            print(f"Created language resource for {language_code}")
 
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
@@ -221,27 +235,34 @@ class Client(Tx):
         Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
         There is no need to ping the server on the current implementation, as connection is handled by the SDK
         """
-        pass
+        print("'ping' is deprecated!")
 
     @ensure_login
     def get_translation_stats(self, project_slug: str) -> dict[str, Any]:
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                return self.api.ResourceLanguageStats(project=project).to_dict()
+                resource_stats = tx_api.ResourceLanguageStats(project=project).to_dict()
+                print(f"Stats acquired!: {resource_stats}")
+                return resource_stats
         raise Exception(f"Unable to find translation for this project {project_slug}")
 
     @ensure_login
     def push(
         self, project_slug: str, resource_slugs: list[str], path_to_files: list[str]
     ):
+        if len(resource_slugs) != len(path_to_files):
+            raise Exception(
+                f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
+            )
         args = [
-            tuple([pro, res, path])
-            for pro, res, path in zip([project_slug], resource_slugs, path_to_files)
+            tuple([project_slug, res, path])
+            for res, path in zip(resource_slugs, path_to_files)
         ]
         map_async(
             fn=self.update_source_translation,
             args=args,
         )
+        print(f"Pushes some {len(resource_slugs)} files!")
 
     @ensure_login
     def pull(
@@ -251,11 +272,13 @@ class Client(Tx):
         language_codes: list[str],
         path_to_files: list[str],
     ):
-        args = [
-            tuple([pro, res, lco, path])
-            for pro, res, lco, path in zip(
-                [project_slug], resource_slugs, language_codes, path_to_files
+        if len(resource_slugs) != len(path_to_files):
+            raise Exception(
+                f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
             )
+        args = [
+            tuple([project_slug, res, lco, path])
+            for res, lco, path in zip(resource_slugs, language_codes, path_to_files)
         ]
         map_async(
             fn=self.get_translation,

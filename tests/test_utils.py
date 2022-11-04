@@ -32,6 +32,6 @@ class TestUtils(unittest.TestCase):
         res = map_async(partials=self.partials)
         assert res == self.res
 
-    def test_3_map_async(self):
+    def test3_map_async(self):
         res = map_async(fn=coroutine_fn, args=self.args)
         assert res == self.res
