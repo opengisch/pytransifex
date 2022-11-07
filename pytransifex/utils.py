@@ -13,7 +13,7 @@ def ensure_login(f):
     return capture_args
 
 
-def map_async(
+def concurrently(
     *,
     fn: Callable | None = None,
     args: Iterable[Any] | None = None,

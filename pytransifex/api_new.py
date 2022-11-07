@@ -9,7 +9,7 @@ from transifex.api.jsonapi.resources import Resource
 
 from pytransifex.config import Config
 from pytransifex.interfaces import Tx
-from pytransifex.utils import ensure_login, map_async
+from pytransifex.utils import concurrently, ensure_login
 
 
 class Client(Tx):
@@ -155,22 +155,29 @@ class Client(Tx):
         project_slug: str,
         resource_slug,
         language_code: str,
-        path_to_file: Path,
+        output_dir: Path,
     ):
         """Fetch the resources matching the language given as parameter for the project"""
         language = tx_api.Language.get(code=language_code)
+        path_to_file = output_dir.joinpath(f"{resource_slug}.{language_code}")
+
         if project := self.get_project(project_slug=project_slug):
+
             if resources := project.fetch("resources"):
+
                 if resource := resources.get(slug=resource_slug):
                     url = tx_api.ResourceTranslationsAsyncDownload.download(
                         resource=resource, language=language
                     )
                     translated_content = requests.get(url).text
+
                     with open(path_to_file, "w") as fh:
                         fh.write(translated_content)
+
                     print(
                         f"Translations downloaded and written to file (resource: {resource_slug})"
                     )
+
                 else:
                     raise Exception(
                         f"Unable to find any resource with this slug: '{resource_slug}'"
@@ -238,31 +245,16 @@ class Client(Tx):
         print("'ping' is deprecated!")
 
     @ensure_login
-    def get_translation_stats(self, project_slug: str) -> dict[str, Any]:
+    def get_project_stats(self, project_slug: str) -> dict[str, Any]:
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                resource_stats = tx_api.ResourceLanguageStats(project=project).to_dict()
-                print(f"Stats acquired!: {resource_stats}")
-                return resource_stats
+                print(str(project))
+                if resource_stats := tx_api.ResourceLanguageStats.get(
+                    "o:test_pytransifex:p:test_project_pytransifex"
+                ):
+                    print(f"Stats acquired!: {resource_stats}")
+                    return resource_stats.to_dict()
         raise Exception(f"Unable to find translation for this project {project_slug}")
-
-    @ensure_login
-    def push(
-        self, project_slug: str, resource_slugs: list[str], path_to_files: list[str]
-    ):
-        if len(resource_slugs) != len(path_to_files):
-            raise Exception(
-                f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
-            )
-        args = [
-            tuple([project_slug, res, path])
-            for res, path in zip(resource_slugs, path_to_files)
-        ]
-        map_async(
-            fn=self.update_source_translation,
-            args=args,
-        )
-        print(f"Pushes some {len(resource_slugs)} files!")
 
     @ensure_login
     def pull(
@@ -270,20 +262,38 @@ class Client(Tx):
         project_slug: str,
         resource_slugs: list[str],
         language_codes: list[str],
-        path_to_files: list[str],
+        output_dir: Path,
+    ):
+        args = [
+            tuple([project_slug, slug, lcode, output_dir])
+            for slug, lcode in zip(resource_slugs, language_codes)
+        ]
+
+        concurrently(
+            fn=self.get_translation,
+            args=args,
+        )
+
+    @ensure_login
+    def push(
+        self, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
     ):
         if len(resource_slugs) != len(path_to_files):
             raise Exception(
                 f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
             )
+
         args = [
-            tuple([project_slug, res, lco, path])
-            for res, lco, path in zip(resource_slugs, language_codes, path_to_files)
+            tuple([project_slug, res, path])
+            for res, path in zip(resource_slugs, path_to_files)
         ]
-        map_async(
-            fn=self.get_translation,
+
+        concurrently(
+            fn=self.update_source_translation,
             args=args,
         )
+
+        print(f"Pushes some {len(resource_slugs)} files!")
 
 
 class Transifex:

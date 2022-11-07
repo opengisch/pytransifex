@@ -2,7 +2,7 @@ import unittest
 from functools import partial
 from time import sleep as tsleep
 
-from pytransifex.utils import map_async
+from pytransifex.utils import concurrently
 
 
 def fn(a: int, b: int) -> int:
@@ -20,9 +20,9 @@ class TestUtils(unittest.TestCase):
         cls.res = [2, 4, 6]
 
     def test1_map_async(self):
-        res = map_async(partials=self.partials)
+        res = concurrently(partials=self.partials)
         assert res == self.res
 
     def test2_map_async(self):
-        res = map_async(fn=fn, args=self.args)
+        res = concurrently(fn=fn, args=self.args)
         assert res == self.res

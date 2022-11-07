@@ -1,5 +1,8 @@
+from dataclasses import dataclass
 from os import environ
+from pathlib import Path
 from typing import NamedTuple
+
 from dotenv import load_dotenv
 
 
@@ -8,6 +11,7 @@ class Config(NamedTuple):
     organization_name: str
     i18n_type: str
     host_name = "https://rest.api.transifex.com"
+    project_slug: str | None = None
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -23,3 +27,11 @@ class Config(NamedTuple):
             )
 
         return cls(token, organization, i18n_type)  # type: ignore
+
+
+@dataclass
+class CliSettings:
+    organization_slug: str
+    project_slug: str | None
+    input_directory: Path | None
+    output_directory: Path | None

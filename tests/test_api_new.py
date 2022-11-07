@@ -79,7 +79,7 @@ class TestNewApi(unittest.TestCase):
     """
 
     def test11_stats(self):
-        stats = self.tx.get_translation_stats(project_slug=self.project_slug)
+        stats = self.tx.get_project_stats(project_slug=self.project_slug)
         print(dir(stats))
         print(str(stats))
         assert stats
