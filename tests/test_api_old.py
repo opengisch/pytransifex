@@ -3,7 +3,7 @@
 import unittest
 import os
 
-from pytransifex.config import Config
+from pytransifex.config import ApiConfig
 from pytransifex.exceptions import PyTransifexException
 from pytransifex.api_old import Transifex
 
@@ -13,7 +13,7 @@ class TestTranslation(unittest.TestCase):
         token = os.getenv("TX_TOKEN")
         assert token is not None
         self.t = Transifex(
-            Config(organization="pytransifex", api_token=token, i18n_type="PO")
+            ApiConfig(organization="pytransifex", api_token=token, i18n_type="PO")
         )
         self.project_slug = "pytransifex-test-project"
         self.project_name = "PyTransifex Test project"

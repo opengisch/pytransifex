@@ -79,6 +79,8 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
+toml==0.10.2
+    # via -r requirements.txt
 toolz==0.12.0
     # via pyseeyou
 transifex-python==3.0.2

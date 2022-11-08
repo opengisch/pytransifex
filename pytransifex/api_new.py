@@ -7,7 +7,7 @@ from transifex.api.jsonapi import JsonApiException
 from transifex.api.jsonapi.exceptions import DoesNotExist
 from transifex.api.jsonapi.resources import Resource
 
-from pytransifex.config import Config
+from pytransifex.config import ApiConfig
 from pytransifex.interfaces import Tx
 from pytransifex.utils import concurrently, ensure_login
 
@@ -18,7 +18,7 @@ class Client(Tx):
     By default instances are created and logged in 'lazyly' -- when creation or login cannot be deferred any longer.
     """
 
-    def __init__(self, config: Config, defer_login: bool = False):
+    def __init__(self, config: ApiConfig, defer_login: bool = False):
         """Extract config values, consumes API token against SDK client"""
         self.api_token = config.api_token
         self.host = config.host_name
@@ -153,11 +153,11 @@ class Client(Tx):
     def get_translation(
         self,
         project_slug: str,
-        resource_slug,
+        resource_slug: str,
         language_code: str,
         output_dir: Path,
     ):
-        """Fetch the resources matching the language given as parameter for the project"""
+        """Fetch the translation resource matching the given language"""
         language = tx_api.Language.get(code=language_code)
         path_to_file = output_dir.joinpath(f"{resource_slug}.{language_code}")
 
@@ -248,12 +248,9 @@ class Client(Tx):
     def get_project_stats(self, project_slug: str) -> dict[str, Any]:
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                print(str(project))
-                if resource_stats := tx_api.ResourceLanguageStats.get(
-                    "o:test_pytransifex:p:test_project_pytransifex"
-                ):
-                    print(f"Stats acquired!: {resource_stats}")
+                if resource_stats := tx_api.ResourceLanguageStats(project=project):
                     return resource_stats.to_dict()
+
         raise Exception(f"Unable to find translation for this project {project_slug}")
 
     @ensure_login
@@ -306,5 +303,5 @@ class Transifex:
 
     def __new__(cls, defer_login: bool = False):
         if not cls.client:
-            cls.client = Client(Config.from_env(), defer_login)
+            cls.client = Client(ApiConfig.from_env(), defer_login)
         return cls.client

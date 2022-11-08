@@ -5,12 +5,12 @@ import json
 from typing import Any
 from types import FunctionType
 
-from pytransifex.config import Config
+from pytransifex.config import ApiConfig
 from pytransifex.exceptions import PyTransifexException
 
 
 class Transifex:
-    def __init__(self, config: Config):
+    def __init__(self, config: ApiConfig):
         """
         Initializes Transifex
 

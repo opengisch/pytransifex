@@ -27,7 +27,6 @@ class TestNewApi(unittest.TestCase):
     def test1_new_api_satisfies_abc(self):
         assert isinstance(self.tx, Tx)
 
-    """
     def test2_create_project(self):
         # Done in setUpClass
         pass
@@ -58,7 +57,7 @@ class TestNewApi(unittest.TestCase):
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
-            path_to_file=self.path_to_file,
+            output_dir=self.path_to_file,
         )
         assert translation
 
@@ -76,22 +75,32 @@ class TestNewApi(unittest.TestCase):
     def test10_ping(self):
         self.tx.ping()
         assert True
-    """
 
     def test11_stats(self):
         stats = self.tx.get_project_stats(project_slug=self.project_slug)
-        print(dir(stats))
         print(str(stats))
         assert stats
 
-    """
     def test12_stats(self):
-        self.tx.get_translation_stats(project_slug=self.project_slug)
-    
+        self.tx.get_project_stats(project_slug=self.project_slug)
+
     def test13_stats(self):
-        self.tx.get_translation_stats(project_slug=self.project_slug)
-    """
+        self.tx.get_project_stats(project_slug=self.project_slug)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+"""
+# Don't remove this!
+curl -g \
+    --request GET --url "https://rest.api.transifex.com/resource_language_stats?filter[project]=o%3Aopengisch%3Ap%3Aqfield-documentation" \
+    --header 'accept: application/vnd.api+json' \
+    --header 'authorization: Bearer TOKEN'
+
+curl -g \
+    --request GET \
+    --url "https://rest.api.transifex.com/resource_language_stats?filter[project]=o%3Atest_pytransifex%3Ap%3Atest_project_pytransifex" \
+    --header 'accept: application/vnd.api+json' \
+    --header 'authorization: Bearer TOKEN'
+"""

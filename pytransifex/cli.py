@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from os import mkdir, rmdir
 from pathlib import Path
 
@@ -11,123 +10,120 @@ client = Transifex(defer_login=True)
 cli_settings: CliSettings | None = None
 
 
-@click.group(chain=True)
-@click.pass_context
-def cli(ctx):
-    ctx.obj = {}
+def extract_files(input_dir: Path) -> tuple[list[Path], list[str], str]:
+    files = list(Path.iterdir(input_dir))
+    slugs = [str(f).split(".")[0] for f in files]
+    files_status_report = "\n".join(
+        (f"{slug} => {file}" for slug, file in zip(slugs, files))
+    )
+    return (files, slugs, files_status_report)
+
+
+@click.group
+def cli():
+    pass
 
 
 @click.option("-v", "--verbose", is_flag=True, default=False)
-@click.option("-out", "--output-dir", is_flag=False)
-@click.option("-in", "--input-dir", is_flag=False)
+@click.option("-out", "--output-directory", is_flag=False)
+@click.option("-in", "--input-directory", is_flag=False)
 @click.option("-org", "--organization-slug", is_flag=False)
 @click.option("-p", "--project-slug", is_flag=False)
 @cli.command(
     "init", help="Initialize the CLI with the appropriate configuration values."
 )
-@click.pass_context
-def init(ctx, **opts):
-    mandatory = ["organization_slug", "project_slug"]
-    if missing := [k for k in mandatory if not k in opts]:
-        raise Exception(
-            f"These keys are not set or do not have a well-defined value: {', '.join(missing)}"
-        )
-    if empty := [k for k, v in opts.items() if k in mandatory and not v]:
-        raise Exception(f"These keys have an empty value: {', '.join(empty)}")
-
-    organization_slug = opts["organization_slug"]
-    project_slug = opts["project_slug"]
-
-    input_directory = opts.get("input_dir")
-    output_directory = opts.get("input_dir")
-    input_directory = Path(input_directory) if input_directory else Path.cwd()
-    output_directory = (
-        Path(output_directory)
-        if output_directory
-        else Path.cwd().joinpath("downloaded_files")
-    )
-
-    has_to_create_dir = not Path.exists(output_directory)
+def init(**opts):
     reply = ""
+    settings = CliSettings.extract_settings(**opts)
+    has_to_create_dir = not Path.exists(settings.output_directory)
 
     try:
         click.echo(f"Initializing...")
 
-        if has_to_create_dir:   
-            mkdir(output_directory)
+        if has_to_create_dir:
+            mkdir(settings.output_directory)
 
-        settings = asdict(CliSettings(
-            organization_slug, project_slug, input_directory, output_directory
-        ))
-        
-        for k, v in settings.items():
-            ctx.obj[k] = v
-        
-        reply += f"Initialized project with the following settings: {project_slug}. "
+        reply += f"Initialized project with the following settings: {settings.project_slug} and saved file to {settings.config_file} "
+
+        if not settings.input_directory:
+            reply += f"WARNING: You will need to declare an input directory if you plan on using 'pytx push', as in 'pytx push --input-directory <PATH/TO/DIRECTORY>'."
 
     except Exception as error:
         reply += f"Failed to initialize the CLI, this error occurred: {error} "
 
         if has_to_create_dir:
-            rmdir(output_directory)
+            rmdir(settings.output_directory)
 
-        reply += f"Removed {output_directory}. "
+        reply += f"Removed {settings.output_directory}. "
 
     finally:
         click.echo(reply)
+        settings.to_disk()
 
 
-@click.argument("input-directory", required=False)
+@click.option("-in", "--input-directory", is_flag=False)
 @cli.command("push", help="Push translation strings")
-@click.pass_context
-def push(ctx, input_directory: str | None):
-    print(f"CONTEXT from PUSH: {ctx.obj}")
-    if input_directory:
-        ctx.obj["input_directory"] = Path(input_directory)
-
-    resource_slugs = [""]
-    path_to_files = list(
-        Path.iterdir(
-            ctx.obj["input_directory"]
-            if "input_directory" in ctx.obj
-            else Path.cwd()
-        )
-    )
+def push(input_directory: str | None):
     reply = ""
+    settings = CliSettings.from_disk()
+    input_dir = (
+        Path(input_directory)
+        if input_directory
+        else getattr(settings, "input_directory", None)
+    )
+
+    if not input_dir:
+        raise Exception(
+            "To use this 'push', you need to initialize the project with a valid path to the directory containing the files to push; alternatively, you can call this commend with 'pytx push --input-directory <PATH/TO/DIRECTORY>'."
+        )
 
     try:
+        files, slugs, files_status_report = extract_files(input_dir)
         click.echo(
-            f"Pushing {resource_slugs} from {path_to_files} to Transifex under project {ctx.obj['project_slug']}..."
+            f"Pushing {files_status_report} to Transifex under project {settings.project_slug}..."
         )
-        # client.push(project_slug=ctx.project_slug, resource_slugs=resource_slugs, path_to_files=path_to_files)
+        client.push(
+            project_slug=settings.project_slug,
+            resource_slugs=slugs,
+            path_to_files=files,
+        )
     except Exception as error:
         reply += f"Failed because of this error: {error}"
     finally:
         click.echo(reply)
+        settings.to_disk()
 
 
 @click.option("-l", "--only-lang", default="all")
-@click.argument("output-directory", required=False)
+@click.option("-out", "--output-directory", is_flag=False)
 @cli.command("pull", help="Pull translation strings")
-@click.pass_context
-def pull(ctx, output_directory: str | None, only_lang: str | None):
-    print(f"CONTEXT from PULL: {ctx.obj}")
-    if output_directory:
-        ctx.obj["output_dir"] = output_directory
-
-    resource_slugs = []
+def pull(output_directory: str | Path | None, only_lang: str | None):
     reply = ""
+    settings = CliSettings.from_disk()
+    resource_slugs = []
     language_codes = only_lang.split(",") if only_lang else []
+
+    if output_directory:
+        output_directory = Path(output_directory)
+        settings.output_directory = output_directory
+    else:
+        output_directory = settings.output_directory
 
     try:
         click.echo(
-            f"Pulling translation strings from project {ctx.obj['project_slug']} to {output_directory}..."
+            f"Pulling translation strings ({language_codes}) from project {settings.project_slug} to {str(output_directory)}..."
         )
-        # client.pull(project_slug=ctx.project_slug, resource_slugs=resource_slugs, language_codes=language_codes, output_dir=ctx.output_dir)
+        client.pull(
+            project_slug=settings.project_slug,
+            resource_slugs=resource_slugs,
+            language_codes=language_codes,
+            output_dir=output_directory,
+        )
     except Exception as error:
         reply += f"Failed because of this error: {error}"
     finally:
         click.echo(reply)
+        settings.to_disk()
 
 
 if __name__ == "__main__":

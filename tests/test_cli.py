@@ -1,10 +1,11 @@
 import unittest
 from pathlib import Path
-
+from os import remove
 from click.testing import CliRunner
 
 from pytransifex.api_new import Transifex
 from pytransifex.cli import cli
+from pytransifex.config import CliSettings, defaults
 
 
 class TestCli(unittest.TestCase):
@@ -29,18 +30,23 @@ class TestCli(unittest.TestCase):
         """
         cls.runner = CliRunner()
 
+    @classmethod
+    def tearDownClass(cls):
+        if Path.exists(defaults["config_file"]):
+            remove(defaults["config_file"])
+
     def test1_init(self):
         result = self.runner.invoke(
             cli,
-            ["init", "-out", "OUTPUT", "-org", "ORGA", "-in", "INPUT", "-p", "PROJECT"],
+            ["init", "-org", "ORGA", "-p", "PROJECT"],
         )
         passed = result.exit_code == 0
         print(result.output if passed else result)
         assert passed
 
     def test2_push(self):
-        result = self.runner.invoke(cli, ["push"])
-        passed = result.exit_code == 0
+        result = self.runner.invoke(cli, ["push", "-in", "SOME_DIRECTORY"])
+        passed = result.exit_code == 0 and "No such file" in result.output
         print(result.output if passed else result)
         assert passed
 
