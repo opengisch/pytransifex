@@ -265,11 +265,11 @@ class Client(Tx):
         language_codes: list[str],
         output_dir: Path,
     ):
-        args = [
-            tuple([project_slug, slug, lcode, output_dir])
-            for slug, lcode in zip(resource_slugs, language_codes)
-        ]
-
+        args = []
+        for l_code in language_codes:
+            for slug in resource_slugs:
+                args.append(tuple([project_slug, slug, l_code, output_dir]))
+        print("ARGS", args)
         concurrently(
             fn=self.get_translation,
             args=args,
@@ -288,7 +288,7 @@ class Client(Tx):
             tuple([project_slug, res, path])
             for res, path in zip(resource_slugs, path_to_files)
         ]
-
+        
         concurrently(
             fn=self.update_source_translation,
             args=args,

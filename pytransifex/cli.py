@@ -7,12 +7,17 @@ from pytransifex.api_new import Transifex
 from pytransifex.config import CliSettings
 
 client = Transifex(defer_login=True)
-cli_settings: CliSettings | None = None
+
+
+def path_to_slug(file_paths: list[Path]) -> list[str]:
+    keep_last = (str(f).split("/")[-1] for f in file_paths)
+    remove_dot = (s.split(".")[0] for s in keep_last)
+    return list(remove_dot)
 
 
 def extract_files(input_dir: Path) -> tuple[list[Path], list[str], str]:
     files = list(Path.iterdir(input_dir))
-    slugs = [str(f).split(".")[0] for f in files]
+    slugs = path_to_slug(files)
     files_status_report = "\n".join(
         (f"{slug} => {file}" for slug, file in zip(slugs, files))
     )
@@ -67,7 +72,7 @@ def push(input_directory: str | None):
     reply = ""
     settings = CliSettings.from_disk()
     input_dir = (
-        Path(input_directory)
+        Path.cwd().joinpath(input_directory)
         if input_directory
         else getattr(settings, "input_directory", None)
     )
@@ -100,7 +105,6 @@ def push(input_directory: str | None):
 def pull(output_directory: str | Path | None, only_lang: str | None):
     reply = ""
     settings = CliSettings.from_disk()
-    resource_slugs = []
     language_codes = only_lang.split(",") if only_lang else []
 
     if output_directory:
@@ -109,6 +113,7 @@ def pull(output_directory: str | Path | None, only_lang: str | None):
     else:
         output_directory = settings.output_directory
 
+    resource_slugs = []
     try:
         click.echo(
             f"Pulling translation strings ({language_codes}) from project {settings.project_slug} to {str(output_directory)}..."

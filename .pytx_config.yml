@@ -1,0 +1,4 @@
+organization_slug = "test_pytransifex"
+project_slug = "test_project_pytransifex"
+output_directory = "/home/hades/opengis/pytransifex/output"
+config_file = "/home/hades/opengis/pytransifex/.pytx_config.yml"

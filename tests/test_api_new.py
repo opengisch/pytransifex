@@ -1,3 +1,4 @@
+from shutil import rmtree
 import unittest
 from pathlib import Path
 
@@ -13,8 +14,8 @@ class TestNewApi(unittest.TestCase):
         cls.project_name = "Test Project PyTransifex"
         cls.resource_slug = "test_resource_fr"
         cls.resource_name = "Test Resource FR"
-        cls.path_to_file = Path(Path.cwd()).joinpath("tests", "test_resource_fr.po")
-        cls.output_dir = Path(Path.cwd()).joinpath("tests", "output")
+        cls.path_to_file = Path.cwd().joinpath("tests", "input", "test_resource_fr.po")
+        cls.output_dir = Path.cwd().joinpath("tests", "output")
 
         if project := cls.tx.get_project(project_slug=cls.project_slug):
             print("Found old project, removing.")
@@ -24,6 +25,11 @@ class TestNewApi(unittest.TestCase):
         cls.tx.create_project(
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        if Path.exists(cls.output_dir):
+            rmtree(cls.output_dir)
 
     def test1_new_api_satisfies_abc(self):
         assert isinstance(self.tx, Tx)

@@ -33,8 +33,8 @@ class ApiConfig(NamedTuple):
 path_keys = ["input_directory", "output_directory", "config_file"]
 mandatory = ["organization_slug", "project_slug"]
 defaults = {
-    "output_directory": Path.cwd().joinpath("downloaded_files"),
-    "config_file": Path.cwd().joinpath(".pytx_config.yaml"),
+    "output_directory": Path.cwd().joinpath("output"),
+    "config_file": Path.cwd().joinpath(".pytx_config.yml"),
 }
 
 

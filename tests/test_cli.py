@@ -5,19 +5,19 @@ from click.testing import CliRunner
 
 from pytransifex.api_new import Transifex
 from pytransifex.cli import cli
-from pytransifex.config import CliSettings, defaults
 
 
 class TestCli(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        """
         cls.tx = Transifex(defer_login=True)
         cls.project_slug = "test_project_pytransifex"
         cls.project_name = "Test Project PyTransifex"
         cls.resource_slug = "test_resource_fr"
         cls.resource_name = "Test Resource FR"
-        cls.path_to_file = Path(Path.cwd()).joinpath("tests", "test_resource_fr.po")
+        cls.path_to_input_dir = Path.cwd().joinpath("tests", "input") 
+        cls.path_to_file = cls.path_to_input_dir.joinpath("test_resource_fr.po")
+        cls.output_dir = Path.cwd().joinpath("tests", "output")
 
         if project := cls.tx.get_project(project_slug=cls.project_slug):
             print("Found old project, removing.")
@@ -27,33 +27,32 @@ class TestCli(unittest.TestCase):
         cls.tx.create_project(
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
-        """
+        
         cls.runner = CliRunner()
 
     @classmethod
     def tearDownClass(cls):
-        if Path.exists(defaults["config_file"]):
-            remove(defaults["config_file"])
+        if Path.exists(cls.output_dir):
+            remove(cls.output_dir)
 
     def test1_init(self):
         result = self.runner.invoke(
             cli,
-            ["init", "-org", "ORGA", "-p", "PROJECT"],
+            ["init", "-p", self.project_slug, "-org", "test_pytransifex"],
         )
         passed = result.exit_code == 0
-        print(result.output if passed else result)
         assert passed
 
     def test2_push(self):
-        result = self.runner.invoke(cli, ["push", "-in", "SOME_DIRECTORY"])
+        result = self.runner.invoke(cli, ["push", "-in", str(self.path_to_input_dir)])
         passed = result.exit_code == 0 and "No such file" in result.output
-        print(result.output if passed else result)
+        print(result.output)
         assert passed
 
     def test3_pull(self):
-        result = self.runner.invoke(cli, ["pull", "-l", "de,fr,it,en"])
+        result = self.runner.invoke(cli, ["pull", "-l", "fr_CH,en_GB"])
         passed = result.exit_code == 0
-        print(result.output if passed else result)
+        print(result.output)
         assert passed
 
 
