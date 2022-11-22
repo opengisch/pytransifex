@@ -14,6 +14,7 @@ class TestNewApi(unittest.TestCase):
         cls.resource_slug = "test_resource_fr"
         cls.resource_name = "Test Resource FR"
         cls.path_to_file = Path(Path.cwd()).joinpath("tests", "test_resource_fr.po")
+        cls.output_dir = Path(Path.cwd()).joinpath("tests", "output")
 
         if project := cls.tx.get_project(project_slug=cls.project_slug):
             print("Found old project, removing.")
@@ -52,21 +53,21 @@ class TestNewApi(unittest.TestCase):
         )
         assert True
 
-    def test6_get_translation(self):
-        translation = self.tx.get_translation(
-            project_slug=self.project_slug,
-            resource_slug=self.resource_slug,
-            language_code="fr_CH",
-            output_dir=self.path_to_file,
-        )
-        assert translation
+    def test6_create_language(self):
+        self.tx.create_language(self.project_slug, "fr_CH")
 
     def test7_list_languages(self):
         languages = self.tx.list_languages(project_slug=self.project_slug)
         assert languages is not None
 
-    def test8_create_language(self):
-        self.tx.create_language(self.project_slug, "fr_CH")
+    def test8_get_translation(self):
+        self.tx.get_translation(
+            project_slug=self.project_slug,
+            resource_slug=self.resource_slug,
+            language_code="fr_CH",
+            output_dir=self.output_dir,
+        )
+        assert Path.exists(Path.joinpath(self.output_dir, self.resource_slug))
 
     def test9_project_exists(self):
         verdict = self.tx.project_exists(project_slug=self.project_slug)

@@ -1,3 +1,4 @@
+from os import mkdir
 from pathlib import Path
 from typing import Any
 
@@ -159,7 +160,7 @@ class Client(Tx):
     ):
         """Fetch the translation resource matching the given language"""
         language = tx_api.Language.get(code=language_code)
-        path_to_file = output_dir.joinpath(f"{resource_slug}.{language_code}")
+        file_name = Path.joinpath(output_dir, resource_slug)
 
         if project := self.get_project(project_slug=project_slug):
 
@@ -171,7 +172,10 @@ class Client(Tx):
                     )
                     translated_content = requests.get(url).text
 
-                    with open(path_to_file, "w") as fh:
+                    if not Path.exists(output_dir):
+                        mkdir(output_dir)
+
+                    with open(file_name, "w") as fh:
                         fh.write(translated_content)
 
                     print(
