@@ -1,0 +1,17 @@
+name: Test Pytx
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Setup CI tests
+        run: |
+          pip install requirements.txt
+          python -m unitest tests -v
