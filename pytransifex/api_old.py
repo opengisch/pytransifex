@@ -1,9 +1,9 @@
-import os
 import codecs
-import requests
 import json
+import os
 from typing import Any
-from types import FunctionType
+
+import requests
 
 from pytransifex.config import ApiConfig
 from pytransifex.exceptions import PyTransifexException

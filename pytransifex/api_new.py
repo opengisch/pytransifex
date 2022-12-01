@@ -288,7 +288,7 @@ class Client(Tx):
             tuple([project_slug, res, path])
             for res, path in zip(resource_slugs, path_to_files)
         ]
-        
+
         concurrently(
             fn=self.update_source_translation,
             args=args,

@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 
-import unittest
 import os
+import unittest
 
+from pytransifex.api_old import Transifex
 from pytransifex.config import ApiConfig
 from pytransifex.exceptions import PyTransifexException
-from pytransifex.api_old import Transifex
 
 
 class TestTranslation(unittest.TestCase):

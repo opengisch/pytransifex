@@ -1,6 +1,7 @@
 import unittest
-from pathlib import Path
 from os import remove
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from pytransifex.api_new import Transifex
@@ -15,7 +16,7 @@ class TestCli(unittest.TestCase):
         cls.project_name = "Test Project PyTransifex"
         cls.resource_slug = "test_resource_fr"
         cls.resource_name = "Test Resource FR"
-        cls.path_to_input_dir = Path.cwd().joinpath("tests", "input") 
+        cls.path_to_input_dir = Path.cwd().joinpath("tests", "input")
         cls.path_to_file = cls.path_to_input_dir.joinpath("test_resource_fr.po")
         cls.output_dir = Path.cwd().joinpath("tests", "output")
 
@@ -27,7 +28,7 @@ class TestCli(unittest.TestCase):
         cls.tx.create_project(
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
-        
+
         cls.runner = CliRunner()
 
     @classmethod

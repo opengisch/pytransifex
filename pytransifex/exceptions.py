@@ -10,10 +10,10 @@ class PyTransifexException(TransifexException):
     def __str__(self):
         if self.response is None:
             return super(PyTransifexException, self).__str__()
-        return '{code} from {url}: {content}'.format(
+        return "{code} from {url}: {content}".format(
             code=self.response.status_code,
             url=self.response.url,
-            content=self.response.content
+            content=self.response.content,
         )
 
 

@@ -32,5 +32,3 @@ Once installed the package can be run as a CLI; example:
     pytx pull name -l fr
 
 Run `pytx --help` for more information.
-
-

@@ -80,7 +80,11 @@ class CliSettings:
             toml.dump(self.serialize(), fh)
 
     def serialize(self) -> dict[str, Any]:
-        return {k: (str(v) if k in path_keys else v) for k, v in asdict(self).items() if v is not None}
+        return {
+            k: (str(v) if k in path_keys else v)
+            for k, v in asdict(self).items()
+            if v is not None
+        }
 
     @staticmethod
     def deserialize(d: dict[str, Any]) -> dict[str, Any]:
