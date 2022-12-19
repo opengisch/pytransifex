@@ -13,5 +13,5 @@ jobs:
 
       - name: Setup CI tests
         run: |
-          pip install requirements.txt
-          python -m unitest tests -v
+          pip install -r requirements.txt
+          python -m unittest discover -s ./tests -p 'test_*.py'

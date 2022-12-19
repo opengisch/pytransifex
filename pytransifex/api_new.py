@@ -52,10 +52,10 @@ class Client(Tx):
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
-        *args,
-        **kwargs,
+        *args,  # absorbing extra args
+        **kwargs,  # absorbing extra kwargs
     ) -> None | Resource:
-        """Create a project. args, kwargs are there to absorb unnecessary arguments from consumers."""
+        """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
 
         try:
@@ -69,7 +69,7 @@ class Client(Tx):
             logging.info("Project created!")
             return res
         except JsonApiException as error:
-            if "already exists" in error.detail:
+            if "already exists" in error.detail: # type: ignore
                 return self.get_project(project_slug=project_slug)
 
     @ensure_login

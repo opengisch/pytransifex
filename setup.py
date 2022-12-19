@@ -2,7 +2,7 @@ import sys
 
 from setuptools import setup
 
-python_min_version = (3, 10)
+python_min_version = (3, 8)
 
 if sys.version_info < python_min_version:
     sys.exit(
