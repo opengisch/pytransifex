@@ -1,3 +1,4 @@
+import logging
 from os import mkdir
 from pathlib import Path
 from typing import Any
@@ -42,7 +43,7 @@ class Client(Tx):
         organization = tx_api.Organization.get(slug=self.organization_name)
         self.projects = organization.fetch("projects")
         self.organization = organization
-        print(f"Logged in as organization: {self.organization_name}")
+        logging.info(f"Logged in as organization: {self.organization_name}")
 
     @ensure_login
     def create_project(
@@ -65,7 +66,7 @@ class Client(Tx):
                 private=private,
                 organization=self.organization,
             )
-            print("Project created!")
+            logging.info("Project created!")
             return res
         except JsonApiException as error:
             if "already exists" in error.detail:
@@ -77,7 +78,7 @@ class Client(Tx):
         if self.projects:
             try:
                 res = self.projects.get(slug=project_slug)
-                print("Got the project!")
+                logging.info("Got the project!")
                 return res
             except DoesNotExist:
                 return None
@@ -87,7 +88,7 @@ class Client(Tx):
         """List all resources for the project passed as argument"""
         if self.projects:
             res = self.projects.filter(slug=project_slug)
-            print("Obtained these resources")
+            logging.info("Obtained these resources:")
             return res
         raise Exception(
             f"Unable to find any project under this organization: '{self.organization}'"
@@ -103,7 +104,7 @@ class Client(Tx):
     ):
         """Create a resource using the given file contents, slugs and names"""
         if not (resource_slug or resource_name):
-            raise Exception("Please give either a resource_slug or resource_name")
+            raise Exception("Please give either a resource_slug or a resource_name")
 
         if project := self.get_project(project_slug=project_slug):
             resource = tx_api.Resource.create(
@@ -116,7 +117,7 @@ class Client(Tx):
             with open(path_to_file, "r") as fh:
                 content = fh.read()
                 tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
-                print(f"Resource created: {resource_slug or resource_name}")
+                logging.info(f"Resource created: {resource_slug or resource_name}")
         else:
             raise Exception(
                 f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
@@ -143,7 +144,7 @@ class Client(Tx):
                         tx_api.ResourceStringsAsyncUpload.upload(
                             content, resource=resource
                         )
-                        print(f"Source updated for resource: {resource_slug}")
+                        logging.info(f"Source updated for resource: {resource_slug}")
                         return
 
         raise Exception(
@@ -178,7 +179,7 @@ class Client(Tx):
                     with open(file_name, "w") as fh:
                         fh.write(translated_content)
 
-                    print(
+                    logging.info(
                         f"Translations downloaded and written to file (resource: {resource_slug})"
                     )
 
@@ -204,7 +205,7 @@ class Client(Tx):
         if self.projects:
             if project := self.projects.get(slug=project_slug):
                 languages = project.fetch("languages")
-                print(f"Obtained these languages")
+                logging.info(f"Obtained these languages")
                 return languages
             raise Exception(
                 f"Unable to find any project with this slug: '{project_slug}'"
@@ -227,7 +228,7 @@ class Client(Tx):
             if coordinators:
                 project.add("coordinators", coordinators)
 
-            print(f"Created language resource for {language_code}")
+            logging.info(f"Created language resource for {language_code}")
 
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
@@ -246,7 +247,7 @@ class Client(Tx):
         Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
         There is no need to ping the server on the current implementation, as connection is handled by the SDK
         """
-        print("'ping' is deprecated!")
+        logging.info("'ping' is deprecated!")
 
     @ensure_login
     def get_project_stats(self, project_slug: str) -> dict[str, Any]:
@@ -269,7 +270,7 @@ class Client(Tx):
         for l_code in language_codes:
             for slug in resource_slugs:
                 args.append(tuple([project_slug, slug, l_code, output_dir]))
-        print("ARGS", args)
+        logging.info("ARGS", args)
         concurrently(
             fn=self.get_translation,
             args=args,
@@ -294,7 +295,7 @@ class Client(Tx):
             args=args,
         )
 
-        print(f"Pushes some {len(resource_slugs)} files!")
+        logging.info(f"Pushes some {len(resource_slugs)} files!")
 
 
 class Transifex:
