@@ -69,7 +69,7 @@ class Client(Tx):
             logging.info("Project created!")
             return res
         except JsonApiException as error:
-            if "already exists" in error.detail: # type: ignore
+            if "already exists" in error.detail:  # type: ignore
                 return self.get_project(project_slug=project_slug)
 
     @ensure_login
