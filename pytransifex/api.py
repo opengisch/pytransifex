@@ -5,6 +5,8 @@ import os
 import codecs
 import requests
 import json
+from urllib import parse
+
 from pytransifex.exceptions import PyTransifexException
 
 
@@ -118,7 +120,8 @@ class Transifex(object):
         ------
         `PyTransifexException`
         """
-        url = 'https://rest.api.transifex.com/projects/o:{o}:p:{p}'.format(o=self.organization, p=project_slug)
+        filter_project = f"o:{self.organization}:p:{project_slug}"
+        url = f"https://rest.api.transifex.com/projects/{parse.quote(filter_project)}"
         response = requests.delete(url, headers={'Content-Type': 'application/vnd.api+json','Authorization': 'Bearer {}'.format(self.api_key)})
         if response.status_code != requests.codes['OK']:
             raise PyTransifexException(response)
@@ -146,9 +149,8 @@ class Transifex(object):
         ------
         `PyTransifexException`
         """
-        url = 'https://api.transifex.com/organizations/{o}/projects/{p}/resources/'.format(
-            o=self.organization, p=project_slug
-        )
+        filter_project = f"o:{self.organization}:p:{project_slug}"
+        url = f"https://rest.api.transifex.com/resources?filter\[project\]={parse.quote(filter_project)}"
         response = requests.get(url, auth=self.auth)
 
         if response.status_code != requests.codes['OK']:
@@ -157,7 +159,8 @@ class Transifex(object):
         return json.loads(codecs.decode(response.content, 'utf-8'))
 
     def delete_team(self, team_slug: str):
-        url = 'https://rest.api.transifex.com/teams/o:{o}:t:{t}'.format(o=self.organization, t=team_slug)
+        filter_team = f"o:{self.organization}:t:{team_slug}"
+        url = f"https://rest.api.transifex.com/teams/{parse.quote(filter_team)}"
         response = requests.delete(url, headers={'Content-Type': 'application/vnd.api+json','Authorization': 'Bearer {}'.format(self.api_key)})
         if response.status_code != requests.codes['OK']:
             raise PyTransifexException(response)
@@ -422,7 +425,8 @@ class Transifex(object):
         project_slug
             The project slug
         """
-        url = 'https://rest.api.transifex.com/projects/o:{o}:p:{s}'.format(o=self.organization, s=project_slug)
+        filter_project = f"o:{self.organization}:p:{project_slug}"
+        url = f"https://rest.api.transifex.com/projects/{parse.quote(filter_project)}"
         response = requests.get(url,
                                 headers={
                                     'Content-Type': 'application/vnd.api+json',
@@ -439,7 +443,8 @@ class Transifex(object):
         """
         Check the connection to the server and the auth credentials
         """
-        url = 'https://api.transifex.com/organizations/{}/projects/'.format(self.organization)
+        filter_organization = f"o:{self.organization}"
+        url = f"https://rest.api.transifex.com/projects?filter\[organization\]={parse.quote(filter_organization)}"
         response = requests.get(url, auth=self.auth)
         success = response.status_code == requests.codes['OK']
         if not success:
