@@ -4,7 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from pytransifex.api_new import Transifex
+from pytransifex.api import Transifex
 from pytransifex.cli import cli
 
 

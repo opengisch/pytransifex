@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from shutil import rmtree
 
-from pytransifex.api_new import Transifex
+from pytransifex.api import Transifex
 from pytransifex.interfaces import Tx
 
 

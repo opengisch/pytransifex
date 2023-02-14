@@ -3,7 +3,7 @@ from pathlib import Path
 
 import click
 
-from pytransifex.api_new import Transifex
+from pytransifex.api import Transifex
 from pytransifex.config import CliSettings
 
 client = Transifex(defer_login=True)
