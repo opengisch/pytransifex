@@ -6,7 +6,7 @@ from typing import Any
 
 
 class PluginManager:
-    # list of path_to_ subdir, path_to_ main.py
+    # list of path to subdir, path to main.py
     discovered_subdir_main: list[tuple[Path, Path]] = []
     # successfully imported modules
     imported_modules: dict[str, Any] = {}
@@ -17,7 +17,8 @@ class PluginManager:
         Expecting directory structure:
             pytransifex/
                 config-plugins/{plugins}
-                    main.py
+                    main.py:create_tx_config
+                    main.py:TxProjectConfig
         """
         plugins_dir = Path.cwd().joinpath("pytransifex", "config-plugins")
         subdirs = [f for f in plugins_dir.iterdir() if f.is_dir()]
@@ -58,6 +59,7 @@ class PluginManager:
                 if spec.loader:
                     spec.loader.exec_module(module)
                     PluginManager.imported_modules[name] = module
+                    
                     print(
                         f"Successfully imported and loaded {module}! Imported modules read: {PluginManager.imported_modules}"
                     )

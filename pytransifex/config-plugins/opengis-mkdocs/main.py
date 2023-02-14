@@ -14,7 +14,7 @@ class TxProjectConfig(NamedTuple):
     TX_TYPE = "GITHUBMARKDOWN"
 
 
-def create_transifex_config(config: TxProjectConfig):
+def create_tx_config(config: TxProjectConfig):
     """Parse all source documentation files and add the ones with tx_slug metadata
     defined to transifex config file.
     """
