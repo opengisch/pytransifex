@@ -11,7 +11,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
 
-      - name: Setup CI tests
+      - name: Run CI tests
         env:
           organization: ${{ secrets.ORGANIZATION }}
           tx_token: ${{ secrets.TX_TOKEN }}
