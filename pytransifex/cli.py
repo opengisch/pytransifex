@@ -19,7 +19,7 @@ def extract_files(input_dir: Path) -> tuple[list[Path], list[str], str]:
     files = list(Path.iterdir(input_dir))
     slugs = path_to_slug(files)
     files_status_report = "\n".join(
-        (f"{slug} => {file}" for slug, file in zip(slugs, files))
+        (f"file:{file} => slug:{slug}" for slug, file in zip(slugs, files))
     )
     return (files, slugs, files_status_report)
 
