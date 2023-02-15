@@ -129,7 +129,3 @@ def pull(output_directory: str | Path | None, only_lang: str | None):
     finally:
         click.echo(reply)
         settings.to_disk()
-
-
-if __name__ == "__main__":
-    cli()
