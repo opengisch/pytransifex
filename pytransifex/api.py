@@ -116,8 +116,10 @@ class Client(Tx):
 
             with open(path_to_file, "r") as fh:
                 content = fh.read()
-                tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
-                logging.info(f"Resource created: {resource_slug or resource_name}")
+
+            tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
+            logging.info(f"Resource created: {resource_slug or resource_name}")
+
         else:
             raise Exception(
                 f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
@@ -141,11 +143,10 @@ class Client(Tx):
                 if resource := resources.get(slug=resource_slug):
                     with open(path_to_file, "r") as fh:
                         content = fh.read()
-                        tx_api.ResourceStringsAsyncUpload.upload(
-                            content, resource=resource
-                        )
-                        logging.info(f"Source updated for resource: {resource_slug}")
-                        return
+
+                    tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
+                    logging.info(f"Source updated for resource: {resource_slug}")
+                    return
 
         raise Exception(
             f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
