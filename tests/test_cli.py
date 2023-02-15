@@ -54,7 +54,7 @@ class TestCli(unittest.TestCase):
 
     def test2_push(self):
         result = self.runner.invoke(cli, ["push", "-in", str(self.path_to_input_dir)])
-        passed = result.exit_code == 0 and "No such file" in result.output
+        passed = result.exit_code == 0
         print(result.output)
         assert passed
 

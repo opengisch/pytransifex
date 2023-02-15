@@ -84,12 +84,14 @@ class Client(Tx):
                 return None
 
     @ensure_login
-    def list_resources(self, project_slug: str) -> list[Resource]:
+    def list_resources(self, project_slug: str) -> list[Any]:
         """List all resources for the project passed as argument"""
-        if self.projects:
-            res = self.projects.filter(slug=project_slug)
-            logging.info("Obtained these resources:")
-            return res
+        if project := self.get_project(project_slug=project_slug):
+            if resources := project.fetch("resources"):
+                return list(resources.all())
+            else:
+                return []
+
         raise Exception(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
@@ -109,8 +111,8 @@ class Client(Tx):
         if project := self.get_project(project_slug=project_slug):
             resource = tx_api.Resource.create(
                 project=project,
-                name=resource_name,
-                slug=resource_slug,
+                name=resource_name or resource_slug,
+                slug=resource_slug or resource_name,
                 i18n_format=tx_api.I18nFormat(id=self.i18n_type),
             )
 
@@ -305,7 +307,7 @@ class Client(Tx):
             logging.info(f"Slug: {slug}. Resources: {resources}.")
             if not slug in resources:
                 logging.info(
-                    f"{project_slug} is missing {slug}. Created it from {path}."
+                    f"{project_slug} is missing {slug}. Creating it from {path}."
                 )
                 self.create_resource(
                     project_slug=project_slug, path_to_file=path, resource_slug=slug

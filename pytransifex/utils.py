@@ -19,16 +19,16 @@ def concurrently(
     args: list[Any] | None = None,
     partials: list[Any] | None = None,
 ) -> list[Any]:
-    if args and len(args) == 0:
-        return []
-    if partials and len(partials) == 0:
-        return []
 
     with ThreadPoolExecutor() as pool:
-        if partials:
+        if not partials is None:
+            assert args is None and fn is None
             futures = [pool.submit(p) for p in partials]
-        elif fn and args:
+        elif (not args is None) and (not fn is None):
+            assert partials is None
             futures = [pool.submit(fn, *a) for a in args]
         else:
-            raise Exception("Either partials or fn and args!")
+            raise ValueError(
+                "Exactly 1 of 'partials' or 'args' must be defined. Found neither was when calling concurrently."
+            )
         return [f.result() for f in as_completed(futures)]
