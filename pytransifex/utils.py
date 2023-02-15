@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import wraps
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 
 def ensure_login(f):
@@ -16,9 +16,14 @@ def ensure_login(f):
 def concurrently(
     *,
     fn: Callable | None = None,
-    args: Iterable[Any] | None = None,
-    partials: Iterable[Any] | None = None,
+    args: list[Any] | None = None,
+    partials: list[Any] | None = None,
 ) -> list[Any]:
+    if args and len(args) == 0:
+        return []
+    if partials and len(partials) == 0:
+        return []
+
     with ThreadPoolExecutor() as pool:
         if partials:
             futures = [pool.submit(p) for p in partials]

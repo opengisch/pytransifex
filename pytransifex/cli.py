@@ -1,3 +1,5 @@
+import logging
+import traceback
 from os import mkdir, rmdir
 from pathlib import Path
 
@@ -19,7 +21,7 @@ def extract_files(input_dir: Path) -> tuple[list[Path], list[str], str]:
     files = list(Path.iterdir(input_dir))
     slugs = path_to_slug(files)
     files_status_report = "\n".join(
-        (f"file:{file} => slug:{slug}" for slug, file in zip(slugs, files))
+        (f"file: {file} => slug: {slug}" for slug, file in zip(slugs, files))
     )
     return (files, slugs, files_status_report)
 
@@ -54,7 +56,9 @@ def init(**opts):
             reply += f"WARNING: You will need to declare an input directory if you plan on using 'pytx push', as in 'pytx push --input-directory <PATH/TO/DIRECTORY>'."
 
     except Exception as error:
-        reply += f"Failed to initialize the CLI, this error occurred: {error} "
+        reply += (
+            f"cli:init > Failed to initialize the CLI, this error occurred: {error}."
+        )
 
         if has_to_create_dir:
             rmdir(settings.output_directory)
@@ -78,14 +82,14 @@ def push(input_directory: str | None):
     )
 
     if not input_dir:
-        raise Exception(
-            "To use this 'push', you need to initialize the project with a valid path to the directory containing the files to push; alternatively, you can call this commend with 'pytx push --input-directory <PATH/TO/DIRECTORY>'."
+        raise FileExistsError(
+            "cli:push > To use this 'push', you need to initialize the project with a valid path to the directory containing the files to push; alternatively, you can call this commend with 'pytx push --input-directory <PATH/TO/DIRECTORY>'."
         )
 
     try:
         files, slugs, files_status_report = extract_files(input_dir)
         click.echo(
-            f"Pushing {files_status_report} to Transifex under project {settings.project_slug}..."
+            f"cli:push > Pushing {files_status_report} to Transifex under project {settings.project_slug}."
         )
         client.push(
             project_slug=settings.project_slug,
@@ -93,7 +97,8 @@ def push(input_directory: str | None):
             path_to_files=files,
         )
     except Exception as error:
-        reply += f"cli:push failed because of this error: {error}"
+        reply += f"cli:push > Failed because of this error: {error}"
+        logging.error(f"traceback: {traceback.print_exc()}")
     finally:
         click.echo(reply)
         settings.to_disk()
@@ -125,7 +130,8 @@ def pull(output_directory: str | Path | None, only_lang: str | None):
             output_dir=output_directory,
         )
     except Exception as error:
-        reply += f"cli:pull failed because of this error: {error}"
+        reply += f"cli:pull > failed because of this error: {error}"
+        logging.error(f"traceback: {traceback.print_exc()}")
     finally:
         click.echo(reply)
         settings.to_disk()

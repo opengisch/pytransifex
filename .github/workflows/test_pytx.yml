@@ -1,4 +1,4 @@
-name: Test Pytx
+name: test pytransifex
 
 on:
   pull_request:

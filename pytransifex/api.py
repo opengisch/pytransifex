@@ -138,6 +138,10 @@ class Client(Tx):
                 "Unable to fetch resource for this organization; define an 'organization slug' first."
             )
 
+        logging.info(
+            f"Updating source translation for resource {resource_slug} from file {path_to_file} (project: {project_slug})."
+        )
+
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
                 if resource := resources.get(slug=resource_slug):
@@ -267,36 +271,59 @@ class Client(Tx):
         language_codes: list[str],
         output_dir: Path,
     ):
+        """Pull resources from project."""
         args = []
         for l_code in language_codes:
             for slug in resource_slugs:
                 args.append(tuple([project_slug, slug, l_code, output_dir]))
-        logging.info("ARGS", args)
-        concurrently(
+
+        res = concurrently(
             fn=self.get_translation,
             args=args,
         )
+
+        logging.info(f"Pulled {args} for {len(res)} results).")
 
     @ensure_login
     def push(
         self, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
     ):
+        """Push resources with files under project."""
         if len(resource_slugs) != len(path_to_files):
-            raise Exception(
+            raise ValueError(
                 f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
             )
 
+        resource_zipped_with_path = list(zip(resource_slugs, path_to_files))
+        resources = self.list_resources(project_slug)
+        logging.info(
+            f"Found {len(resources)} resource(s) for {project_slug}. Checking for missing resources and creating where necessary."
+        )
+        created_when_missing_resource = []
+
+        for slug, path in resource_zipped_with_path:
+            logging.info(f"Slug: {slug}. Resources: {resources}.")
+            if not slug in resources:
+                logging.info(
+                    f"{project_slug} is missing {slug}. Created it from {path}."
+                )
+                self.create_resource(
+                    project_slug=project_slug, path_to_file=path, resource_slug=slug
+                )
+                created_when_missing_resource.append(slug)
+
         args = [
-            tuple([project_slug, res, path])
-            for res, path in zip(resource_slugs, path_to_files)
+            tuple([project_slug, slug, path])
+            for slug, path in resource_zipped_with_path
+            if not slug in created_when_missing_resource
         ]
 
-        concurrently(
+        res = concurrently(
             fn=self.update_source_translation,
             args=args,
         )
 
-        logging.info(f"Pushes some {len(resource_slugs)} files!")
+        logging.info(f"Pushed {args} for {len(res)} results.")
 
 
 class Transifex:
