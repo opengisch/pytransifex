@@ -20,6 +20,14 @@ class TestCli(unittest.TestCase):
         cls.path_to_file = cls.path_to_input_dir.joinpath("test_resource_fr.po")
         cls.output_dir = Path.cwd().joinpath("tests", "output")
 
+        if missing := next(
+            filter(lambda p: not p.exists(), [cls.path_to_file, cls.path_to_input_dir]),
+            None,
+        ):
+            raise ValueError(
+                f"Unable to complete test with broken tests inputs. Found missing: {missing}"
+            )
+
         if project := cls.tx.get_project(project_slug=cls.project_slug):
             print("Found old project, removing.")
             project.delete()

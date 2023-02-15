@@ -93,7 +93,7 @@ def push(input_directory: str | None):
             path_to_files=files,
         )
     except Exception as error:
-        reply += f"Failed because of this error: {error}"
+        reply += f"cli:push failed because of this error: {error}"
     finally:
         click.echo(reply)
         settings.to_disk()
@@ -125,7 +125,7 @@ def pull(output_directory: str | Path | None, only_lang: str | None):
             output_dir=output_directory,
         )
     except Exception as error:
-        reply += f"Failed because of this error: {error}"
+        reply += f"cli:pull failed because of this error: {error}"
     finally:
         click.echo(reply)
         settings.to_disk()
