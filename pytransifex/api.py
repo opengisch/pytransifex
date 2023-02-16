@@ -335,7 +335,22 @@ class Transifex:
 
     client = None
 
-    def __new__(cls, defer_login: bool = False):
+    def __new__(cls, *, defer_login: bool = False, **kwargs):
         if not cls.client:
-            cls.client = Client(ApiConfig.from_env(), defer_login)
+            try:
+                if kwargs:
+                    config = ApiConfig(**kwargs)
+                else:
+                    logging.info(
+                        f"As you called 'Transifex' without argument, we'll try defining your project from environment variables."
+                    )
+                    config = ApiConfig.from_env()
+
+                cls.client = Client(config, defer_login)
+
+            except Exception as error:
+                available = list(ApiConfig._fields)
+                msg = f"Unable to define a proper config. API initialization uses the following fields, with only 'project_slug' optional: {available}"
+                logging.error(f"{msg}:\n{error}")
+
         return cls.client
