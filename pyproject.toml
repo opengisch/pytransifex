@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytransifex"
-packages=["pytransifex"]
 dynamic = ["version", "readme"]
 authors = [
     {name = "Denis Rouzaud", email = "denis@opengis.ch"},
@@ -15,7 +14,7 @@ readme = "README.rst"
 requires-python = ">=3.10"
 keywords = ["transifex"]
 license = {text = "GPLv3"}
-url="https://github.com/opengisch/pytransifex"
+urls=["https://github.com/opengisch/pytransifex"]
 classifiers = [
     "Topic :: Software Development :: Localization",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
