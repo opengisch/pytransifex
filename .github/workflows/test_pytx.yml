@@ -1,5 +1,7 @@
 name: test pytransifex
 
+concurrency: testing_environment
+
 on:
   pull_request:
     branches:
