@@ -19,7 +19,6 @@ def concurrently(
     args: list[Any] | None = None,
     partials: list[Any] | None = None,
 ) -> list[Any]:
-
     with ThreadPoolExecutor() as pool:
         if not partials is None:
             assert args is None and fn is None

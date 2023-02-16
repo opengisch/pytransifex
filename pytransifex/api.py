@@ -171,9 +171,7 @@ class Client(Tx):
         file_name = Path.joinpath(output_dir, resource_slug)
 
         if project := self.get_project(project_slug=project_slug):
-
             if resources := project.fetch("resources"):
-
                 if resource := resources.get(slug=resource_slug):
                     url = tx_api.ResourceTranslationsAsyncDownload.download(
                         resource=resource, language=language

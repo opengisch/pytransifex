@@ -2,4 +2,4 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-VERSION = '2.dev'
+VERSION = "2.dev"

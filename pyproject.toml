@@ -24,8 +24,6 @@ classifiers = [
 dependencies = [
     "requests", "click"
 ]
-dynamic = ["version"]
-
 [project.scripts]
 pytx = "pytransifex.cli:cli"
 
