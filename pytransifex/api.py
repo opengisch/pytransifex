@@ -249,12 +249,13 @@ class Client(Tx):
         )
 
     @ensure_login
-    def ping(self):
+    def ping(self) -> bool:
         """
         Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
         There is no need to ping the server on the current implementation, as connection is handled by the SDK
         """
         logging.info("'ping' is deprecated!")
+        return True
 
     @ensure_login
     def get_project_stats(self, project_slug: str) -> dict[str, Any]:

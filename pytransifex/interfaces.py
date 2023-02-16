@@ -6,8 +6,7 @@ class Tx(ABC):
     # TODO
     # This interface modelled after api.py:Transifex satisfies the expectations of qgis-plugin-cli
     # but it falls short of requiring an implementation for methods that qgis-plugin-cli does not use:
-    #   coordinator, create_translation, delete_project, delete_resource, delete_team
-    # The question is whether I should implement them. Is there's a consumer downstream?
+    # { coordinator, create_translation, delete_project, delete_resource, delete_team }
 
     @abstractmethod
     def create_project(
@@ -77,5 +76,5 @@ class Tx(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def ping(self):
+    def ping(self) -> bool:
         raise NotImplementedError
