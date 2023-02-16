@@ -26,7 +26,7 @@ jobs:
           VERSION=${GITHUB_REF:-0.0.0}
           VERSION=${VERSION##*/}
           VERSION=$(echo "$VERSION" | cut -d- -f1 )
-          sed -i "s/VERSION *=.*$/VERSION = ${VERSION}/" setup.py
+          sed -i "s/VERSION *=.*$/VERSION = ${VERSION}/" pytransifex/__init__.py
 
       - name: Set up Python
         uses: actions/setup-python@v4
