@@ -22,7 +22,7 @@ docutils==0.17.1
     # via
     #   sphinx
     #   sphinx-rtd-theme
-future==0.18.2
+future==0.18.3
     # via pyseeyou
 idna==3.4
     # via requests
