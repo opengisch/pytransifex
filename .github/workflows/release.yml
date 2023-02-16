@@ -12,7 +12,7 @@ on:
 jobs:
   tests:
     name: "Tests"
-    uses: test_pytx.yml@master
+    uses: .github/workflows/test_pytx.yml@master
     secrets: inherit
 
   build-python-wheel:
@@ -27,6 +27,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF:-0.0.0}
           VERSION=${VERSION##*/}
+          VERSION=$(echo "$VERSION" | cut -d- -f1 )
           sed -i "s/VERSION *=.*$/VERSION = ${VERSION}/" setup.py
 
       - name: Set up Python
