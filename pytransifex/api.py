@@ -1,452 +1,343 @@
-#/usr/bin/python3
+import logging
+from os import mkdir
+from pathlib import Path
+from typing import Any
 
-
-import os
-import codecs
 import requests
-import json
-from urllib import parse
+from transifex.api import transifex_api as tx_api
+from transifex.api.jsonapi import JsonApiException
+from transifex.api.jsonapi.exceptions import DoesNotExist
+from transifex.api.jsonapi.resources import Resource
 
-from pytransifex.exceptions import PyTransifexException
+from pytransifex.config import ApiConfig
+from pytransifex.interfaces import Tx
+from pytransifex.utils import concurrently, ensure_login
 
 
-class Transifex(object):
-    def __init__(self, api_token: str, organization: str, i18n_type: str = 'PO'):
-        """
-        Initializes Transifex 
+class Client(Tx):
+    """
+    The proper Transifex client expected by the cli and other consumers.
+    By default instances are created and logged in 'lazyly' -- when creation or login cannot be deferred any longer.
+    """
 
-        Parameters
-        ----------
-        api_token
-            the API token to the service
-        organization
-            the name of the organization
-        i18n_type
-            the type of translation (PO, QT, …)
-            defaults to: PO
-        """
-        self.auth = ('api', api_token)
-        self.api_key = api_token
+    def __init__(self, config: ApiConfig, defer_login: bool = False):
+        """Extract config values, consumes API token against SDK client"""
+        self.api_token = config.api_token
+        self.host = config.host_name
+        self.organization_name = config.organization_name
+        self.i18n_type = config.i18n_type
+        self.logged_in = False
+
+        if not defer_login:
+            self.login()
+
+    def login(self):
+        if self.logged_in:
+            return
+
+        # Authentication
+        tx_api.setup(host=self.host, auth=self.api_token)
+        self.logged_in = True
+
+        # Saving organization and projects to avoid round-trips
+        organization = tx_api.Organization.get(slug=self.organization_name)
+        self.projects = organization.fetch("projects")
         self.organization = organization
-        self.i18n_type = i18n_type
+        logging.info(f"Logged in as organization: {self.organization_name}")
 
-    def create_project(self,
-                    slug,
-                    name: str = None,
-                    source_language_code: str = 'en-gb',
-                    outsource_project_name: str = None,
-                    private: bool = False,
-                    repository_url: str = None):
-        """
-        Create a new project on Transifex
-        
-        Parameters
-        ----------
-        slug
-            the project slug
-        name
-            the project name, defaults to the project slug
-        source_language_code
-            the source language code, defaults to 'en-gb'
-        outsource_project_name
-            the name of the project to outsource translation team management to
-        private
-            controls if this is created as a closed source or open-source
-            project, defaults to `False`
-        repository_url
-            The url for the repository. This is required if private is set to
-            False
+    @ensure_login
+    def create_project(
+        self,
+        project_slug: str,
+        project_name: str | None = None,
+        source_language_code: str = "en_GB",
+        private: bool = False,
+        *args,  # absorbing extra args
+        **kwargs,  # absorbing extra kwargs
+    ) -> None | Resource:
+        """Create a project."""
+        source_language = tx_api.Language.get(code=source_language_code)
 
-        Raises
-        ------
-        `PyTransifexException`
-           if project was not created properly
-        """
-        if name is None:
-            name = slug
+        try:
+            res = tx_api.Project.create(
+                name=project_name,
+                slug=project_slug,
+                source_language=source_language,
+                private=private,
+                organization=self.organization,
+            )
+            logging.info("Project created!")
+            return res
+        except JsonApiException as error:
+            if "already exists" in error.detail:  # type: ignore
+                return self.get_project(project_slug=project_slug)
 
-        url = 'https://rest.api.transifex.com/projects'
-        data = {
-            'data': {
-                'attributes': {
-                    'name': name,
-                    'slug': slug,
-                    'description': name,
-                    'private': private,
-                    'repository_url': repository_url
-                },
-                'relationships': {
-                    'organization': {
-                        'data': {
-                            'id': 'o:{}'.format(self.organization),
-                            'type': 'organizations'
-                        }
-                    },
-                    'source_language': {
-                        'data': {
-                            "id": "l:{}".format(source_language_code),
-                            "type": "languages"
-                        }
-                    }
-                },
-                'type': 'projects'
-            }
+    @ensure_login
+    def get_project(self, project_slug: str) -> None | Resource:
+        """Fetches the project matching the given slug"""
+        if self.projects:
+            try:
+                res = self.projects.get(slug=project_slug)
+                logging.info("Got the project!")
+                return res
+            except DoesNotExist:
+                return None
 
-        }
-        if outsource_project_name is not None:
-            data['outsource'] = outsource_project_name
+    @ensure_login
+    def list_resources(self, project_slug: str) -> list[Any]:
+        """List all resources for the project passed as argument"""
+        if project := self.get_project(project_slug=project_slug):
+            if resources := project.fetch("resources"):
+                return list(resources.all())
+            else:
+                return []
 
-        response = requests.post(url,
-                                 data=json.dumps(data),
-                                 headers={
-                                     'Content-Type': 'application/vnd.api+json',
-                                     'Authorization': 'Bearer {}'.format(self.api_key)
-                                 })
-
-        if response.status_code != requests.codes['OK']:
-            print('Could not create project with data: {}'.format(data))
-            raise PyTransifexException(response)
-
-    def delete_project(self, project_slug: str):
-        """
-        Deletes the project
-
-        Parameters
-        ----------
-        project_slug
-            the project slug
-
-        Raises
-        ------
-        `PyTransifexException`
-        """
-        filter_project = f"o:{self.organization}:p:{project_slug}"
-        url = f"https://rest.api.transifex.com/projects/{parse.quote(filter_project)}"
-        response = requests.delete(url, headers={'Content-Type': 'application/vnd.api+json','Authorization': 'Bearer {}'.format(self.api_key)})
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
-
-    def list_resources(self, project_slug) -> list:
-        """
-        List all resources in a project
-
-        Parameters
-        ----------
-        project_slug
-            the project slug
-
-        Returns
-        -------
-        list of dictionaries with resources info
-            each dictionary may contain
-                category
-                i18n_type
-                source_language_code
-                slug
-                name
-
-        Raises
-        ------
-        `PyTransifexException`
-        """
-        filter_project = f"o:{self.organization}:p:{project_slug}"
-        url = f"https://rest.api.transifex.com/resources?filter\[project\]={parse.quote(filter_project)}"
-        response = requests.get(url, auth=self.auth)
-
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
-
-        return json.loads(codecs.decode(response.content, 'utf-8'))
-
-    def delete_team(self, team_slug: str):
-        filter_team = f"o:{self.organization}:t:{team_slug}"
-        url = f"https://rest.api.transifex.com/teams/{parse.quote(filter_team)}"
-        response = requests.delete(url, headers={'Content-Type': 'application/vnd.api+json','Authorization': 'Bearer {}'.format(self.api_key)})
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
-
-    def create_resource(self,
-                     project_slug,
-                     path_to_file,
-                     resource_slug=None,
-                     resource_name=None):
-        """
-        Creates a new resource with the specified slug from the given file.
-
-        Parameters
-        ----------
-        project_slug
-            the project slug
-        path_to_file
-            the path to the file which will be uploaded
-        resource_slug
-            the resource slug, defaults to a sluggified version of the filename
-        resource_name
-            the resource name, defaults to the resource name
-
-        Raises
-        ------
-        `PyTransifexException`
-        `IOError`
-        """
-        url = 'https://www.transifex.com/api/2/project/{p}/resources/'.format(p=project_slug)
-        data = {
-            'name': resource_name or resource_slug,
-            'slug': resource_slug,
-            'i18n_type': self.i18n_type,
-            'content': open(path_to_file, 'r').read()
-        }
-        response = requests.post(
-            url,
-            data=json.dumps(data),
-            auth=self.auth,
-            headers={'content-type': 'application/json'}
+        raise Exception(
+            f"Unable to find any project under this organization: '{self.organization}'"
         )
 
-        if response.status_code != requests.codes['CREATED']:
-            raise PyTransifexException(response)
+    @ensure_login
+    def create_resource(
+        self,
+        project_slug: str,
+        path_to_file: Path,
+        resource_slug: str | None = None,
+        resource_name: str | None = None,
+    ):
+        """Create a resource using the given file contents, slugs and names"""
+        if not (resource_slug or resource_name):
+            raise Exception("Please give either a resource_slug or a resource_name")
 
-    def delete_resource(self, project_slug, resource_slug):
-        """
-        Deletes the given resource
+        if project := self.get_project(project_slug=project_slug):
+            resource = tx_api.Resource.create(
+                project=project,
+                name=resource_name or resource_slug,
+                slug=resource_slug or resource_name,
+                i18n_format=tx_api.I18nFormat(id=self.i18n_type),
+            )
 
-        Parameters
-        ----------
-        project_slug
-            the project slug
-        resource_slug
-            the resource slug
+            with open(path_to_file, "r") as fh:
+                content = fh.read()
 
-        Raises
-        ------
-        `PyTransifexException`
-        """
-        url = '{u}/project/{s}/resource/{r}'.format(u=self._base_api_url, s=project_slug, r=resource_slug)
-        response = requests.delete(url, auth=self.auth)
-        if response.status_code != requests.codes['NO_CONTENT']:
-            raise PyTransifexException(response)
+            tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
+            logging.info(f"Resource created: {resource_slug or resource_name}")
 
-    def update_source_translation(self, project_slug, resource_slug,
-                                  path_to_file):
-        """
-        Update the source translation for a give resource
-
-        Parameters
-        ----------
-        project_slug
-            the project slug
-        resource_slug
-            the resource slug
-        path_to_file
-            the path to the file which will be uploaded
-
-        Returns
-        -------
-        dictionary with info
-            Info may include keys
-                strings_added
-                strings_updated
-                redirect
-
-        Raises
-        ------
-        `PyTransifexException`
-        `IOError`
-        """
-        url = 'https://www.transifex.com/api/2/project/{s}/resource/{r}/content'.format(
-            s=project_slug, r=resource_slug
-        )
-        content = open(path_to_file, 'r').read()
-        data = {'content': content}
-        response = requests.put(
-             url, data=json.dumps(data), auth=self.auth, headers={'content-type': 'application/json'},
-        )
-
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
         else:
-            return json.loads(codecs.decode(response.content, 'utf-8'))
+            raise Exception(
+                f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
+            )
 
-    def create_translation(self, project_slug, resource_slug, language_code,
-                           path_to_file) -> dict:
+    @ensure_login
+    def update_source_translation(
+        self, project_slug: str, resource_slug: str, path_to_file: Path
+    ):
         """
-        Creates or updates the translation for the specified language
-
-        Parameters
-        ----------
-        project_slug
-            the project slug
-        resource_slug
-            the resource slug
-        language_code
-            the language_code of the file
-        path_to_file
-            the path to the file which will be uploaded
-
-        Returns
-        -------
-        dictionary with info
-            Info may include keys
-                strings_added
-                strings_updated
-                redirect
-
-        Raises
-        ------
-        `PyTransifexException`
-        `IOError`
+        Update the translation strings for the given resource using the content of the file
+        passsed as argument
         """
-        url = 'https://www.transifex.com/api/2/project/{s}/resource/{r}/translation/{l}'.format(
-            s=project_slug, r=resource_slug, l=language_code
-        )
-        content = open(path_to_file, 'r').read()
-        data = {'content': content}
-        response = requests.put(
-             url, data=json.dumps(data), auth=self.auth, headers={'content-type': 'application/json'},
+        if not "slug" in self.organization.attributes:
+            raise Exception(
+                "Unable to fetch resource for this organization; define an 'organization slug' first."
+            )
+
+        logging.info(
+            f"Updating source translation for resource {resource_slug} from file {path_to_file} (project: {project_slug})."
         )
 
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
+        if project := self.get_project(project_slug=project_slug):
+            if resources := project.fetch("resources"):
+                if resource := resources.get(slug=resource_slug):
+                    with open(path_to_file, "r") as fh:
+                        content = fh.read()
+
+                    tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
+                    logging.info(f"Source updated for resource: {resource_slug}")
+                    return
+
+        raise Exception(
+            f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
+        )
+
+    @ensure_login
+    def get_translation(
+        self,
+        project_slug: str,
+        resource_slug: str,
+        language_code: str,
+        output_dir: Path,
+    ):
+        """Fetch the translation resource matching the given language"""
+        language = tx_api.Language.get(code=language_code)
+        file_name = Path.joinpath(output_dir, resource_slug)
+
+        if project := self.get_project(project_slug=project_slug):
+
+            if resources := project.fetch("resources"):
+
+                if resource := resources.get(slug=resource_slug):
+                    url = tx_api.ResourceTranslationsAsyncDownload.download(
+                        resource=resource, language=language
+                    )
+                    translated_content = requests.get(url).text
+
+                    if not Path.exists(output_dir):
+                        mkdir(output_dir)
+
+                    with open(file_name, "w") as fh:
+                        fh.write(translated_content)
+
+                    logging.info(
+                        f"Translations downloaded and written to file (resource: {resource_slug})"
+                    )
+
+                else:
+                    raise Exception(
+                        f"Unable to find any resource with this slug: '{resource_slug}'"
+                    )
+            else:
+                raise Exception(
+                    f"Unable to find any resource for this project: '{project_slug}'"
+                )
         else:
-            return json.loads(codecs.decode(response.content, 'utf-8'))
+            raise Exception(
+                f"Couldn't find any project with this slug: '{project_slug}'"
+            )
 
-    def get_translation(self,
-                        project_slug: str,
-                        resource_slug: str,
-                        language_code: str,
-                        path_to_file: str):
+    @ensure_login
+    def list_languages(self, project_slug: str) -> list[Any]:
         """
-        Returns the requested translation, if it exists. The translation is
-        returned as a serialized string, unless the GET parameter file is
-        specified.
-
-        Parameters
-        ----------
-        project_slug
-            The project slug
-        resource_slug
-            The resource slug
-        language_code
-            The language_code of the file.
-            This should be the *Transifex* language code
-        path_to_file
-            The path to the translation file which will be saved.
-            If the directory does not exist, it will be automatically created.
-
-        Raises
-        ------
-        `PyTransifexException`
-        `IOError`
+        List all languages for which there is at least 1 resource registered
+        under the parameterised project
         """
-        url = 'https://www.transifex.com/api/2/project/{s}/resource/{r}/translation/{l}'.format(
-            s=project_slug, r=resource_slug, l=language_code)
-        query = {'file': ''}
-        response = requests.get(url, auth=self.auth, params=query)
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
-        else:
-            os.makedirs(os.path.dirname(path_to_file), exist_ok=True)
-            with open(path_to_file, 'wb') as f:
-                for line in response.iter_content():
-                    f.write(line)
+        if self.projects:
+            if project := self.projects.get(slug=project_slug):
+                languages = project.fetch("languages")
+                logging.info(f"Obtained these languages")
+                return languages
+            raise Exception(
+                f"Unable to find any project with this slug: '{project_slug}'"
+            )
+        raise Exception(
+            f"Unable to find any project under this organization: '{self.organization}'"
+        )
 
-    def list_languages(self, project_slug, resource_slug):
-        """
-        List all the languages available for a given resource in a project
+    @ensure_login
+    def create_language(
+        self,
+        project_slug: str,
+        language_code: str,
+        coordinators: None | list[Any] = None,
+    ):
+        """Create a new language resource in the remote Transifex repository"""
+        if project := self.get_project(project_slug=project_slug):
+            project.add("languages", [tx_api.Language.get(code=language_code)])
 
-        Parameters
-        ----------
-        project_slug
-            The project slug
-        resource_slug
-            The resource slug
+            if coordinators:
+                project.add("coordinators", coordinators)
 
-        Returns
-        -------
-        list
-            The language codes which this resource has translations
+            logging.info(f"Created language resource for {language_code}")
 
-        Raises
-        ------
-        `PyTransifexException`
-        """
-        url = 'https://www.transifex.com/api/2/project/{s}/resource/{r}'.format(s=project_slug, r=resource_slug)
-        response = requests.get(url, auth=self.auth, params={'details': ''})
-
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
-
-        content = json.loads(codecs.decode(response.content, 'utf-8'))
-        languages = [language['code'] for language in content['available_languages']]
-        return languages
-
-    def create_language(self, project_slug: str, language_code: str, coordinators: list):
-        """
-        Create a new language for the given project
-        Parameters
-        ----------
-        project_slug:
-        language_code:
-        coordinators:
-            list of coordinators
-        """
-        url = 'https://www.transifex.com/api/2/project/{s}/languages'.format(s=project_slug)
-        data = {'language_code': language_code, 'coordinators': coordinators}
-        response = requests.post(url,
-                                 headers={'content-type': 'application/json'},
-                                 auth=self.auth,
-                                 data=json.dumps(data))
-        if response.status_code != requests.codes['CREATED']:
-            raise PyTransifexException(response)
-
-    def coordinator(self, project_slug: str, language_code: str = 'en') -> str:
-        """
-        Return the coordinator of the the project
-
-        Parameters
-        ----------
-        project_slug:
-        language_code:
-        """
-        url = 'https://www.transifex.com/api/2/project/{s}/language/{l}/coordinators'.format(s=project_slug, l=language_code)
-        response = requests.get(url, auth=self.auth)
-        if response.status_code != requests.codes['OK']:
-            raise PyTransifexException(response)
-        content = json.loads(codecs.decode(response.content, 'utf-8'))
-        return content['coordinators']
-
-    def project_exists(self, project_slug) -> bool:
-        """
-        Check if there is a project with the given slug registered with
-        Transifex
-
-        Parameters
-        ----------
-        project_slug
-            The project slug
-        """
-        filter_project = f"o:{self.organization}:p:{project_slug}"
-        url = f"https://rest.api.transifex.com/projects/{parse.quote(filter_project)}"
-        response = requests.get(url,
-                                headers={
-                                    'Content-Type': 'application/vnd.api+json',
-                                    'Authorization': 'Bearer {}'.format(self.api_key)
-                                })
-        if response.status_code == requests.codes['OK']:
-            return True
-        elif response.status_code == requests.codes['NOT_FOUND']:
+    @ensure_login
+    def project_exists(self, project_slug: str) -> bool:
+        """Check if the project exists in the remote Transifex repository"""
+        if self.projects:
+            if self.projects.get(slug=project_slug):
+                return True
             return False
-        else:
-            raise PyTransifexException(response)
+        raise Exception(
+            f"No project could be found under this organization: '{self.organization}'"
+        )
 
+    @ensure_login
     def ping(self) -> bool:
         """
-        Check the connection to the server and the auth credentials
+        Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
+        There is no need to ping the server on the current implementation, as connection is handled by the SDK
         """
-        filter_organization = f"o:{self.organization}"
-        url = f"https://rest.api.transifex.com/projects?filter\[organization\]={parse.quote(filter_organization)}"
-        response = requests.get(url, auth=self.auth)
-        success = response.status_code == requests.codes['OK']
-        if not success:
-            raise PyTransifexException(response)
-        return success
+        logging.info("'ping' is deprecated!")
+        return True
+
+    @ensure_login
+    def get_project_stats(self, project_slug: str) -> dict[str, Any]:
+        if self.projects:
+            if project := self.projects.get(slug=project_slug):
+                if resource_stats := tx_api.ResourceLanguageStats(project=project):
+                    return resource_stats.to_dict()
+
+        raise Exception(f"Unable to find translation for this project {project_slug}")
+
+    @ensure_login
+    def pull(
+        self,
+        project_slug: str,
+        resource_slugs: list[str],
+        language_codes: list[str],
+        output_dir: Path,
+    ):
+        """Pull resources from project."""
+        args = []
+        for l_code in language_codes:
+            for slug in resource_slugs:
+                args.append(tuple([project_slug, slug, l_code, output_dir]))
+
+        res = concurrently(
+            fn=self.get_translation,
+            args=args,
+        )
+
+        logging.info(f"Pulled {args} for {len(res)} results).")
+
+    @ensure_login
+    def push(
+        self, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
+    ):
+        """Push resources with files under project."""
+        if len(resource_slugs) != len(path_to_files):
+            raise ValueError(
+                f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
+            )
+
+        resource_zipped_with_path = list(zip(resource_slugs, path_to_files))
+        resources = self.list_resources(project_slug)
+        logging.info(
+            f"Found {len(resources)} resource(s) for {project_slug}. Checking for missing resources and creating where necessary."
+        )
+        created_when_missing_resource = []
+
+        for slug, path in resource_zipped_with_path:
+            logging.info(f"Slug: {slug}. Resources: {resources}.")
+            if not slug in resources:
+                logging.info(
+                    f"{project_slug} is missing {slug}. Creating it from {path}."
+                )
+                self.create_resource(
+                    project_slug=project_slug, path_to_file=path, resource_slug=slug
+                )
+                created_when_missing_resource.append(slug)
+
+        args = [
+            tuple([project_slug, slug, path])
+            for slug, path in resource_zipped_with_path
+            if not slug in created_when_missing_resource
+        ]
+
+        res = concurrently(
+            fn=self.update_source_translation,
+            args=args,
+        )
+
+        logging.info(f"Pushed {args} for {len(res)} results.")
+
+
+class Transifex:
+    """
+    Singleton factory to ensure the client is initialized at most once.
+    Simpler to manage than a solution relying on 'imports being imported once in Python.
+    """
+
+    client = None
+
+    def __new__(cls, defer_login: bool = False):
+        if not cls.client:
+            cls.client = Client(ApiConfig.from_env(), defer_login)
+        return cls.client
