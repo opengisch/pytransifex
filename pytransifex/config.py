@@ -48,7 +48,6 @@ class CliSettings:
 
     @classmethod
     def extract_settings(cls, **user_data) -> "CliSettings":
-
         if missing := [k for k in mandatory if not k in user_data]:
             raise Exception(
                 f"These keys are not set or do not have a well-defined value: {', '.join(missing)}"

@@ -1,0 +1,5 @@
+requests
+click
+transifex-python
+python-dotenv
+toml
