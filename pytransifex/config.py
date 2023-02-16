@@ -15,7 +15,7 @@ class ApiConfig(NamedTuple):
     project_slug: str | None = None
 
     @classmethod
-    def from_env(cls) -> "ApiConfig":
+    def from_env(cls) -> ApiConfig:
         load_dotenv()
 
         token = environ.get("TX_TOKEN")
