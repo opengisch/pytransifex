@@ -11,3 +11,7 @@ venv/
 Pipfile
 Pipfile.lock
 .env
+
+build/
+dist/
+*.egg-info

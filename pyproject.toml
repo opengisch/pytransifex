@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytransifex"
+packages=["pytransifex"]
+dynamic = ["version", "readme"]
+authors = [
+    {name = "Denis Rouzaud", email = "denis@opengis.ch"},
+    {name = "Adrien Glauser", email = "adrien@opengis.ch"},
+]
+description = "Yet another Python Transifex API."
+readme = "README.rst"
+requires-python = ">=3.10"
+keywords = ["transifex"]
+license = {text = "GPLv3"}
+url="https://github.com/opengisch/pytransifex"
+classifiers = [
+    "Topic :: Software Development :: Localization",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "requests", "click"
+]
+dynamic = ["version"]
+
+[project.scripts]
+pytx = "pytransifex.cli:cli"
+
+[tool.setuptools.dynamic]
+version = {attr = "pytransifex.VERSION"}
+readme = {file = ["README.md"]}
