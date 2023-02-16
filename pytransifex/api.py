@@ -335,6 +335,12 @@ class Transifex:
 
     client = None
 
+    def __new__(cls, api_token: str, organization: str, i18n_type: str = 'PO', defer_login: bool = False):
+        if not cls.client:
+            cfg = ApiConfig(api_token, organization, i18n_type)
+            cls.client = Client(cfg, defer_login)
+        return client
+
     def __new__(cls, defer_login: bool = False):
         if not cls.client:
             cls.client = Client(ApiConfig.from_env(), defer_login)
