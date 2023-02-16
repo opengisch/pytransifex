@@ -14,7 +14,7 @@ readme = "README.rst"
 requires-python = ">=3.10"
 keywords = ["transifex"]
 license = {text = "GPLv3"}
-urls=["https://github.com/opengisch/pytransifex"]
+homepage="https://github.com/opengisch/pytransifex"
 classifiers = [
     "Topic :: Software Development :: Localization",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
