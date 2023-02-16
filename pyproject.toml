@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytransifex"
-dynamic = ["version", "readme"]
+dynamic = ["version", "readme", "dependencies"]
 authors = [
     {name = "Denis Rouzaud", email = "denis@opengis.ch"},
     {name = "Adrien Glauser", email = "adrien@opengis.ch"},
@@ -18,7 +18,6 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python :: 3",
 ]
-dependencies = {file = ["requirements/base.txt"]}
 [project.scripts]
 pytx = "pytransifex.cli:cli"
 
@@ -28,3 +27,4 @@ homepage="https://github.com/opengisch/pytransifex"
 [tool.setuptools.dynamic]
 version = {attr = "pytransifex.VERSION"}
 readme = {file = ["README.md"]}
+dependencies = {file = ["requirements/base.txt"]}
