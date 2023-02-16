@@ -12,7 +12,7 @@ on:
 jobs:
   tests:
     name: "Tests"
-    uses: .github/workflows/test_pytx.yml@master
+    uses: ./.github/workflows/test_pytx.yml@master
     secrets: inherit
 
   build-python-wheel:
