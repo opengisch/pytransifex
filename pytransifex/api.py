@@ -64,7 +64,7 @@ class Client(Tx):
                 source_language=source_language,
                 private=private,
                 organization=self.organization,
-                **kwargs
+                **kwargs,
             )
             logging.info("Project created!")
             return res
