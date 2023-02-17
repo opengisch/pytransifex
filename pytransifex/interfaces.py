@@ -16,7 +16,6 @@ class Tx(ABC):
         source_language_code: str = "en-gb",
         outsource_project_name: str | None = None,
         private: bool = False,
-        repository_url: str | None = None,
     ):
         raise NotImplementedError
 
