@@ -58,6 +58,9 @@ class Client(Tx):
         """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
 
+        if project_name is None:
+            project_name = project_slug
+
         try:
             res = tx_api.Project.create(
                 name=project_name,
