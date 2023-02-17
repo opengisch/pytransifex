@@ -52,7 +52,8 @@ class Client(Tx):
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
-        **kwargs,
+        *args,  # absorbing extra args
+        **kwargs,  # absorbing extra kwargs
     ) -> None | Resource:
         """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
