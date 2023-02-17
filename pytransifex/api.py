@@ -52,8 +52,7 @@ class Client(Tx):
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
-        *args,  # absorbing extra args
-        **kwargs,  # absorbing extra kwargs
+        **kwargs,
     ) -> None | Resource:
         """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
@@ -65,6 +64,7 @@ class Client(Tx):
                 source_language=source_language,
                 private=private,
                 organization=self.organization,
+                **kwargs
             )
             logging.info("Project created!")
             return res
