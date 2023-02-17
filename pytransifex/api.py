@@ -52,6 +52,7 @@ class Client(Tx):
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
+        repository_url: str = None,
         **kwargs,
     ) -> None | Resource:
         """Create a project."""
@@ -64,7 +65,7 @@ class Client(Tx):
                 source_language=source_language,
                 private=private,
                 organization=self.organization,
-                **kwargs,
+                repository_url=repository_url,
             )
             logging.info("Project created!")
             return res
