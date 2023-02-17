@@ -81,7 +81,9 @@ class Client(Tx):
                         organization=self.organization,
                     )
                 else:
-                    raise ValueError(f"Private projects need to pass a 'repository_url' (string) argument.")
+                    raise ValueError(
+                        f"Private projects need to pass a 'repository_url' (non-empty string) argument."
+                    )
 
             logging.info("Project created!")
 
