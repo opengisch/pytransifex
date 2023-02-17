@@ -52,7 +52,7 @@ class Client(Tx):
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
-        repository_url: str = None,
+        repository_url: str | None = None,
         **kwargs,
     ) -> None | Resource:
         """Create a project."""
