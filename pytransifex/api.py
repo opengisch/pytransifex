@@ -62,18 +62,36 @@ class Client(Tx):
             project_name = project_slug
 
         try:
-            res = tx_api.Project.create(
-                name=project_name,
-                slug=project_slug,
-                source_language=source_language,
-                private=private,
-                organization=self.organization,
-            )
+            if private:
+                return tx_api.Project.create(
+                    name=project_name,
+                    slug=project_slug,
+                    source_language=source_language,
+                    private=private,
+                    organization=self.organization,
+                )
+            else:
+                if repository_url := kwargs.get("repository_url", None):
+                    return tx_api.Project.create(
+                        name=project_name,
+                        slug=project_slug,
+                        source_language=source_language,
+                        private=private,
+                        repository_url=repository_url,
+                        organization=self.organization,
+                    )
+                else:
+                    raise ValueError(
+                        f"Private projects need to pass a 'repository_url' (non-empty string) argument."
+                    )
+
             logging.info("Project created!")
-            return res
+
         except JsonApiException as error:
-            if "already exists" in error.detail:  # type: ignore
+            if hasattr(error, "detail") and "already exists" in error.detail:  # type: ignore
                 return self.get_project(project_slug=project_slug)
+            else:
+                logging.error(f"Unable to create project; API replied with {error}")
 
     @ensure_login
     def get_project(self, project_slug: str) -> None | Resource:
