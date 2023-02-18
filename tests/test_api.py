@@ -55,14 +55,14 @@ class TestNewApi(unittest.TestCase):
             project_slug=self.project_slug,
             resource_name=self.resource_name,
             resource_slug=self.resource_slug,
-            path_to_file=self.path_to_file,
+            path_to_file=str(self.path_to_file),
         )
         assert True
 
     def test5_update_source_translation(self):
         self.tx.update_source_translation(
             project_slug=self.project_slug,
-            path_to_file=self.path_to_file,
+            path_to_file=str(self.path_to_file),
             resource_slug=self.resource_slug,
         )
         assert True
@@ -81,7 +81,7 @@ class TestNewApi(unittest.TestCase):
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
-            path_to_file=self.output_dir,
+            path_to_file=str(self.output_dir),
         )
         assert Path.exists(Path.joinpath(self.output_dir, self.resource_slug))
 

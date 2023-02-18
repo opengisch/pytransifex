@@ -267,9 +267,15 @@ class Client(Tx):
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
         """Check if the project exists in the remote Transifex repository"""
-        if self.projects and self.projects.get(slug=project_slug):
-            return True
-        return False
+        try:
+            if not self.projects:
+                return False
+            elif self.projects.get(slug=project_slug):
+                return True
+            else:
+                return False
+        except DoesNotExist:
+            return False
 
     @ensure_login
     def ping(self) -> bool:
