@@ -18,6 +18,8 @@ class Client(Tx):
     """
     The proper Transifex client expected by the cli and other consumers.
     By default instances are created and logged in 'lazyly' -- when creation or login cannot be deferred any longer.
+    Methods with more than 2 parameters don't allow for positional arguments.
+    '**kwargs' is used in methods that may need to forward extra named arguments to the API.
     """
 
     def __init__(self, config: ApiConfig, defer_login: bool = False):
@@ -48,18 +50,16 @@ class Client(Tx):
     @ensure_login
     def create_project(
         self,
+        *,
         project_slug: str,
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
-        *args,  # absorbing extra args
-        **kwargs,  # absorbing extra kwargs
+        **kwargs,
     ) -> None | Resource:
         """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
-
-        if project_name is None:
-            project_name = project_slug
+        project_name = project_name or project_slug
 
         try:
             if private:
@@ -69,6 +69,7 @@ class Client(Tx):
                     source_language=source_language,
                     private=private,
                     organization=self.organization,
+                    **kwargs,
                 )
             else:
                 if repository_url := kwargs.get("repository_url", None):
@@ -79,6 +80,7 @@ class Client(Tx):
                         private=private,
                         repository_url=repository_url,
                         organization=self.organization,
+                        **kwargs,
                     )
                 else:
                     raise ValueError(
@@ -113,21 +115,23 @@ class Client(Tx):
             else:
                 return []
 
-        raise Exception(
+        raise ValueError(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
 
     @ensure_login
     def create_resource(
         self,
+        *,
         project_slug: str,
         path_to_file: Path,
         resource_slug: str | None = None,
         resource_name: str | None = None,
+        **kwargs,
     ):
         """Create a resource using the given file contents, slugs and names"""
         if not (resource_slug or resource_name):
-            raise Exception("Please give either a resource_slug or a resource_name")
+            raise ValueError("Please give either a resource_slug or a resource_name")
 
         if project := self.get_project(project_slug=project_slug):
             resource = tx_api.Resource.create(
@@ -135,6 +139,7 @@ class Client(Tx):
                 name=resource_name or resource_slug,
                 slug=resource_slug or resource_name,
                 i18n_format=tx_api.I18nFormat(id=self.i18n_type),
+                **kwargs,
             )
 
             with open(path_to_file, "r") as fh:
@@ -144,20 +149,20 @@ class Client(Tx):
             logging.info(f"Resource created: {resource_slug or resource_name}")
 
         else:
-            raise Exception(
+            raise ValueError(
                 f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
             )
 
     @ensure_login
     def update_source_translation(
-        self, project_slug: str, resource_slug: str, path_to_file: Path
+        self, *, project_slug: str, resource_slug: str, path_to_file: Path
     ):
         """
         Update the translation strings for the given resource using the content of the file
         passsed as argument
         """
         if not "slug" in self.organization.attributes:
-            raise Exception(
+            raise ValueError(
                 "Unable to fetch resource for this organization; define an 'organization slug' first."
             )
 
@@ -175,13 +180,14 @@ class Client(Tx):
                     logging.info(f"Source updated for resource: {resource_slug}")
                     return
 
-        raise Exception(
+        raise ValueError(
             f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
         )
 
     @ensure_login
     def get_translation(
         self,
+        *,
         project_slug: str,
         resource_slug: str,
         language_code: str,
@@ -210,39 +216,43 @@ class Client(Tx):
                     )
 
                 else:
-                    raise Exception(
+                    raise ValueError(
                         f"Unable to find any resource with this slug: '{resource_slug}'"
                     )
             else:
-                raise Exception(
+                raise ValueError(
                     f"Unable to find any resource for this project: '{project_slug}'"
                 )
         else:
-            raise Exception(
+            raise ValueError(
                 f"Couldn't find any project with this slug: '{project_slug}'"
             )
 
     @ensure_login
-    def list_languages(self, project_slug: str) -> list[Any]:
+    def list_languages(self, project_slug: str, resource_slug: str) -> list[Any]:
         """
-        List all languages for which there is at least 1 resource registered
-        under the parameterised project
+        List languages for which there exist translations under the given resource.
         """
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                languages = project.fetch("languages")
-                logging.info(f"Obtained these languages")
-                return languages
-            raise Exception(
+                if resource := project.fetch("resources").get(slug=resource_slug):
+                    logging.info(f"Obtained these languages")
+                    # FIXME: Extract a list[str] mapping to resource languages
+                    return resource
+                raise ValueError(
+                    f"Unable to find any resource with this slug: '{resource_slug}'"
+                )
+            raise ValueError(
                 f"Unable to find any project with this slug: '{project_slug}'"
             )
-        raise Exception(
+        raise ValueError(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
 
     @ensure_login
     def create_language(
         self,
+        *,
         project_slug: str,
         language_code: str,
         coordinators: None | list[Any] = None,
@@ -279,11 +289,12 @@ class Client(Tx):
                 if resource_stats := tx_api.ResourceLanguageStats(project=project):
                     return resource_stats.to_dict()
 
-        raise Exception(f"Unable to find translation for this project {project_slug}")
+        raise ValueError(f"Unable to find translation for this project {project_slug}")
 
     @ensure_login
     def pull(
         self,
+        *,
         project_slug: str,
         resource_slugs: list[str],
         language_codes: list[str],
@@ -304,7 +315,7 @@ class Client(Tx):
 
     @ensure_login
     def push(
-        self, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
+        self, *, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
     ):
         """Push resources with files under project."""
         if len(resource_slugs) != len(path_to_files):
@@ -352,7 +363,7 @@ class Transifex:
 
     client = None
 
-    def __new__(cls, *, defer_login: bool = False, **kwargs):
+    def __new__(cls, *, defer_login: bool = False, **kwargs) -> None | "Client":
         if not cls.client:
             try:
                 if kwargs:
@@ -363,11 +374,9 @@ class Transifex:
                     )
                     config = ApiConfig.from_env()
 
-                cls.client = Client(config, defer_login)
+                return Client(config, defer_login)
 
-            except Exception as error:
+            except ValueError as error:
                 available = list(ApiConfig._fields)
                 msg = f"Unable to define a proper config. API initialization uses the following fields, with only 'project_slug' optional: {available}"
                 logging.error(f"{msg}:\n{error}")
-
-        return cls.client

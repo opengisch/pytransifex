@@ -9,7 +9,10 @@ from pytransifex.interfaces import Tx
 class TestNewApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tx = Transifex(defer_login=True)
+        client = Transifex(defer_login=True)
+        assert client
+
+        cls.tx = client
         cls.project_slug = "test_project_pytransifex"
         cls.project_name = "Test Project PyTransifex"
         cls.resource_slug = "test_resource_fr"
@@ -65,10 +68,12 @@ class TestNewApi(unittest.TestCase):
         assert True
 
     def test6_create_language(self):
-        self.tx.create_language(self.project_slug, "fr_CH")
+        self.tx.create_language(project_slug=self.project_slug, language_code="fr_CH")
 
     def test7_list_languages(self):
-        languages = self.tx.list_languages(project_slug=self.project_slug)
+        languages = self.tx.list_languages(
+            project_slug=self.project_slug, resource_slug=self.resource_slug
+        )
         assert languages is not None
 
     def test8_get_translation(self):

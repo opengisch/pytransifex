@@ -22,9 +22,18 @@ class ApiConfig(NamedTuple):
         organization = environ.get("ORGANIZATION")
         i18n_type = environ.get("I18N_TYPE", "PO")
 
-        if any(not v for v in [token, organization, i18n_type]):
-            raise Exception(
-                "Envars 'TX_TOKEN' and 'ORGANIZATION' must be set to non-empty values. Aborting now."
+        if faulty := next(
+            filter(
+                lambda v: not v[1],
+                zip(
+                    ["token", "organization", "i18_ntype"],
+                    [token, organization, i18n_type],
+                ),
+            ),
+            None,
+        ):
+            raise ValueError(
+                f"Envars 'TX_TOKEN', 'ORGANIZATION' and 'I18N_TYPE must be set to non-empty values, yet this one was found missing ('None' or empty string): {faulty[0]}"
             )
 
         return cls(token, organization, i18n_type)  # type: ignore
