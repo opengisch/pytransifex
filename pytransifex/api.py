@@ -1,5 +1,4 @@
 import logging
-from os import mkdir
 from pathlib import Path
 from typing import Any, Optional
 
@@ -124,7 +123,7 @@ class Client(Tx):
         self,
         *,
         project_slug: str,
-        path_to_file: Path,
+        path_to_file: str,
         resource_slug: str | None = None,
         resource_name: str | None = None,
         **kwargs,
@@ -155,7 +154,7 @@ class Client(Tx):
 
     @ensure_login
     def update_source_translation(
-        self, *, project_slug: str, resource_slug: str, path_to_file: Path
+        self, *, project_slug: str, resource_slug: str, path_to_file: str
     ):
         """
         Update the translation strings for the given resource using the content of the file
@@ -191,11 +190,10 @@ class Client(Tx):
         project_slug: str,
         resource_slug: str,
         language_code: str,
-        output_dir: Path,
+        path_to_file: str,
     ):
         """Fetch the translation resource matching the given language"""
         language = tx_api.Language.get(code=language_code)
-        file_name = Path.joinpath(output_dir, resource_slug)
 
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
@@ -205,10 +203,8 @@ class Client(Tx):
                     )
                     translated_content = requests.get(url).text
 
-                    if not Path.exists(output_dir):
-                        mkdir(output_dir)
-
-                    with open(file_name, "w") as fh:
+                    Path.mkdir(Path(path_to_file), parents=True, exist_ok=True)
+                    with open(path_to_file, "w") as fh:
                         fh.write(translated_content)
 
                     logging.info(
@@ -264,7 +260,9 @@ class Client(Tx):
             if coordinators:
                 project.add("coordinators", coordinators)
 
-            logging.info(f"Created language resource for {language_code}")
+            logging.info(
+                f"Created language resource for {language_code} and added these coordinators: {coordinators}"
+            )
 
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
@@ -298,7 +296,7 @@ class Client(Tx):
         project_slug: str,
         resource_slugs: list[str],
         language_codes: list[str],
-        output_dir: Path,
+        output_dir: str,
     ):
         """Pull resources from project."""
         args = []
@@ -315,12 +313,12 @@ class Client(Tx):
 
     @ensure_login
     def push(
-        self, *, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
+        self, *, project_slug: str, resource_slugs: list[str], path_to_files: list[str]
     ):
         """Push resources with files under project."""
         if len(resource_slugs) != len(path_to_files):
             raise ValueError(
-                f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
+                f"Resources slugs ({len(resource_slugs)}) and path to files ({len(path_to_files)}) must be equal in size!"
             )
 
         resource_zipped_with_path = list(zip(resource_slugs, path_to_files))

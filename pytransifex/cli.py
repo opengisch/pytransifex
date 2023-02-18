@@ -9,6 +9,7 @@ from pytransifex.api import Transifex
 from pytransifex.config import CliSettings
 
 client = Transifex(defer_login=True)
+assert client
 
 
 def path_to_slug(file_paths: list[Path]) -> list[str]:
@@ -94,7 +95,7 @@ def push(input_directory: str | None):
         client.push(
             project_slug=settings.project_slug,
             resource_slugs=slugs,
-            path_to_files=files,
+            path_to_files=[str(f) for f in files],
         )
     except Exception as error:
         reply += f"cli:push > Failed because of this error: {error}"
@@ -107,16 +108,15 @@ def push(input_directory: str | None):
 @click.option("-l", "--only-lang", default="all")
 @click.option("-out", "--output-directory", is_flag=False)
 @cli.command("pull", help="Pull translation strings")
-def pull(output_directory: str | Path | None, only_lang: str | None):
+def pull(output_directory: str | None, only_lang: str | None):
     reply = ""
     settings = CliSettings.from_disk()
     language_codes = only_lang.split(",") if only_lang else []
 
     if output_directory:
-        output_directory = Path(output_directory)
-        settings.output_directory = output_directory
+        settings.output_directory = Path(output_directory)
     else:
-        output_directory = settings.output_directory
+        output_directory = str(settings.output_directory)
 
     resource_slugs = []
     try:

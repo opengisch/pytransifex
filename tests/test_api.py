@@ -81,7 +81,7 @@ class TestNewApi(unittest.TestCase):
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
-            output_dir=self.output_dir,
+            path_to_file=self.output_dir,
         )
         assert Path.exists(Path.joinpath(self.output_dir, self.resource_slug))
 
