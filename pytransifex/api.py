@@ -1,7 +1,7 @@
 import logging
 from os import mkdir
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import requests
 from transifex.api import transifex_api as tx_api
@@ -363,7 +363,7 @@ class Transifex:
 
     client = None
 
-    def __new__(cls, *, defer_login: bool = False, **kwargs) -> None | "Client":
+    def __new__(cls, *, defer_login: bool = False, **kwargs) -> Optional["Client"]:
         if not cls.client:
             try:
                 if kwargs:
