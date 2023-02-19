@@ -194,6 +194,8 @@ class Client(Tx):
     ) -> str:
         """Fetch the translation resource matching the given language"""
         language = tx_api.Language.get(code=language_code)
+        path_to_output_dir_as_path = Path(path_to_output_dir)
+        Path.mkdir(path_to_output_dir_as_path, parents=True, exist_ok=True)
 
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
@@ -202,13 +204,9 @@ class Client(Tx):
                         resource=resource, language=language
                     )
                     translated_content = requests.get(url).text
-
-                    path_to_output_dir_as_path = Path(path_to_output_dir)
-                    Path.mkdir(path_to_output_dir_as_path, parents=True, exist_ok=True)
                     path_to_file = path_to_output_dir_as_path.joinpath(
                         f"{resource_slug}_{language_code}"
                     )
-
                     with open(path_to_file, "w") as fh:
                         fh.write(translated_content)
 

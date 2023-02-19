@@ -4,7 +4,7 @@ from shutil import rmtree
 
 from pytransifex.api import Transifex
 from pytransifex.interfaces import Tx
-from tests import test_config
+from tests import logging, test_config
 
 
 class TestNewApi(unittest.TestCase):
@@ -29,10 +29,10 @@ class TestNewApi(unittest.TestCase):
             )
 
         if project := cls.tx.get_project(project_slug=cls.project_slug):
-            print("Found old project, removing.")
+            logging.info("Found old project, removing.")
             project.delete()
 
-        print("Creating a brand new project")
+        logging.info("Creating a brand new project")
         cls.tx.create_project(
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
@@ -80,13 +80,27 @@ class TestNewApi(unittest.TestCase):
         assert languages is not None
 
     def test8_get_translation(self):
-        path_to_ouput_file = self.tx.get_translation(
+        path_to_output_file = self.tx.get_translation(
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
             path_to_output_dir=str(self.output_dir),
         )
-        assert Path.exists(Path(path_to_ouput_file))
+        assert Path.exists(Path(path_to_output_file))
+
+        from difflib import Differ
+        from filecmp import cmp
+        from sys import stdout
+
+        diff = Differ()
+        if not cmp(path_to_output_file, self.path_to_file):
+            with open(path_to_output_file, "r") as fh:
+                f1 = fh.readlines()
+            with open(path_to_output_file, "r") as fh:
+                f2 = fh.readlines()
+            res = list(diff.compare(f1, f2))
+            logging.warning(f"Notice that the two files were found to differ:")
+            stdout.writelines(res)
 
     def test9_project_exists(self):
         verdict = self.tx.project_exists(project_slug=self.project_slug)
@@ -98,7 +112,7 @@ class TestNewApi(unittest.TestCase):
 
     def test11_stats(self):
         stats = self.tx.get_project_stats(project_slug=self.project_slug)
-        print(str(stats))
+        logging.info(str(stats))
         assert stats
 
     def test12_stats(self):
