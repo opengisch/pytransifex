@@ -1,0 +1,5 @@
+organization_slug = "test_pytransifex"
+project_slug = "test_project_pytransifex"
+project_name = "Python Transifex API testing"
+resource_slug = "test_resource_fr"
+resource_name = "Test Resource FR"

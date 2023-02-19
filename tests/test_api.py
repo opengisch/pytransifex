@@ -4,6 +4,7 @@ from shutil import rmtree
 
 from pytransifex.api import Transifex
 from pytransifex.interfaces import Tx
+from tests import test_config
 
 
 class TestNewApi(unittest.TestCase):
@@ -12,13 +13,15 @@ class TestNewApi(unittest.TestCase):
         client = Transifex(defer_login=True)
         assert client
 
-        cls.tx = client
-        cls.project_slug = "test_project_pytransifex"
-        cls.project_name = "Test Project PyTransifex"
-        cls.resource_slug = "test_resource_fr"
-        cls.resource_name = "Test Resource FR"
-        cls.path_to_file = Path.cwd().joinpath("tests", "input", "test_resource_fr.po")
+        cls.path_to_input_dir = Path.cwd().joinpath("tests", "data", "resources")
+        cls.path_to_file = cls.path_to_input_dir.joinpath("test_resource_fr.po")
         cls.output_dir = Path.cwd().joinpath("tests", "output")
+
+        cls.tx = client
+        cls.project_slug = test_config["project_slug"]
+        cls.project_name = test_config["project_name"]
+        cls.resource_slug = test_config["resource_slug"]
+        cls.resource_name = test_config["resource_name"]
 
         if missing := next(filter(lambda p: not p.exists(), [cls.path_to_file]), None):
             raise ValueError(
@@ -77,11 +80,12 @@ class TestNewApi(unittest.TestCase):
         assert languages is not None
 
     def test8_get_translation(self):
+        path_to_file = self.output_dir.joinpath(f"{self.resource_slug}.po")
         self.tx.get_translation(
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
-            path_to_file=str(self.output_dir),
+            path_to_file=str(path_to_file),
         )
         assert Path.exists(Path.joinpath(self.output_dir, self.resource_slug))
 
