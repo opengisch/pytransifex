@@ -80,14 +80,13 @@ class TestNewApi(unittest.TestCase):
         assert languages is not None
 
     def test8_get_translation(self):
-        path_to_file = self.output_dir.joinpath(f"{self.resource_slug}.po")
-        self.tx.get_translation(
+        path_to_ouput_file = self.tx.get_translation(
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
-            path_to_file=str(path_to_file),
+            path_to_output_dir=str(self.output_dir),
         )
-        assert Path.exists(Path.joinpath(self.output_dir, self.resource_slug))
+        assert Path.exists(Path(path_to_ouput_file))
 
     def test9_project_exists(self):
         verdict = self.tx.project_exists(project_slug=self.project_slug)

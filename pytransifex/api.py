@@ -190,8 +190,8 @@ class Client(Tx):
         project_slug: str,
         resource_slug: str,
         language_code: str,
-        path_to_file: str,
-    ):
+        path_to_output_dir: str,
+    ) -> str:
         """Fetch the translation resource matching the given language"""
         language = tx_api.Language.get(code=language_code)
 
@@ -203,13 +203,19 @@ class Client(Tx):
                     )
                     translated_content = requests.get(url).text
 
-                    Path.mkdir(Path(path_to_file), parents=True, exist_ok=True)
+                    path_to_output_dir_as_path = Path(path_to_output_dir)
+                    Path.mkdir(path_to_output_dir_as_path, parents=True, exist_ok=True)
+                    path_to_file = path_to_output_dir_as_path.joinpath(
+                        f"{resource_slug}_{language_code}"
+                    )
+
                     with open(path_to_file, "w") as fh:
                         fh.write(translated_content)
 
                     logging.info(
                         f"Translations downloaded and written to file (resource: {resource_slug})"
                     )
+                    return str(path_to_file)
 
                 else:
                     raise ValueError(
@@ -302,13 +308,13 @@ class Client(Tx):
         project_slug: str,
         resource_slugs: list[str],
         language_codes: list[str],
-        output_dir: str,
+        path_to_output_dir: str,
     ):
         """Pull resources from project."""
         args = []
         for l_code in language_codes:
             for slug in resource_slugs:
-                args.append(tuple([project_slug, slug, l_code, output_dir]))
+                args.append(tuple([project_slug, slug, l_code, path_to_output_dir]))
 
         res = concurrently(
             fn=self.get_translation,

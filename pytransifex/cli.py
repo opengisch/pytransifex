@@ -127,7 +127,7 @@ def pull(output_directory: str | None, only_lang: str | None):
             project_slug=settings.project_slug,
             resource_slugs=resource_slugs,
             language_codes=language_codes,
-            output_dir=output_directory,
+            path_to_output_dir=output_directory,
         )
     except Exception as error:
         reply += f"cli:pull > failed because of this error: {error}"
