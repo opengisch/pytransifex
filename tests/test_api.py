@@ -4,7 +4,7 @@ from shutil import rmtree
 
 from pytransifex.api import Transifex
 from pytransifex.interfaces import Tx
-from tests import logging, test_config
+from tests import logging, test_config_public
 
 
 class TestNewApi(unittest.TestCase):
@@ -19,10 +19,10 @@ class TestNewApi(unittest.TestCase):
         cls.output_file = cls.output_dir.joinpath("test_resource_fr_DOWNLOADED.po")
 
         cls.tx = client
-        cls.project_slug = test_config["project_slug"]
-        cls.project_name = test_config["project_name"]
-        cls.resource_slug = test_config["resource_slug"]
-        cls.resource_name = test_config["resource_name"]
+        cls.project_slug = test_config_public["project_slug"]
+        cls.project_name = test_config_public["project_name"]
+        cls.resource_slug = test_config_public["resource_slug"]
+        cls.resource_name = test_config_public["resource_name"]
 
         if missing := next(filter(lambda p: not p.exists(), [cls.path_to_file]), None):
             raise ValueError(

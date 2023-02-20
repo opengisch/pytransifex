@@ -5,7 +5,12 @@ import toml
 
 logging.basicConfig(level=logging.INFO)
 
-p = Path.cwd().joinpath("./tests/data/test_config.toml")
-test_config = toml.load(p)
+private = Path.cwd().joinpath("./tests/data/test_config.toml")
+test_config = toml.load(private)
 
-logging.info(f"Running tests with this test_config: {test_config}")
+public = Path.cwd().joinpath("./tests/data/test_config_public.toml")
+test_config_public = toml.load(public)
+
+logging.info(
+    f"Running tests with this test_config: {test_config} and test_config_public: {test_config_public}"
+)

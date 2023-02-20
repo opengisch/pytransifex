@@ -61,32 +61,16 @@ class Client(Tx):
         project_name = project_name or project_slug
 
         try:
-            if private:
-                return tx_api.Project.create(
-                    name=project_name,
-                    slug=project_slug,
-                    source_language=source_language,
-                    private=private,
-                    organization=self.organization,
-                    **kwargs,
-                )
-            else:
-                if repository_url := kwargs.get("repository_url", None):
-                    return tx_api.Project.create(
-                        name=project_name,
-                        slug=project_slug,
-                        source_language=source_language,
-                        private=private,
-                        repository_url=repository_url,
-                        organization=self.organization,
-                        **kwargs,
-                    )
-                else:
-                    raise ValueError(
-                        f"Private projects need to pass a 'repository_url' (non-empty string) argument."
-                    )
-
-            logging.info("Project created!")
+            proj = tx_api.Project.create(
+                name=project_name,
+                slug=project_slug,
+                source_language=source_language,
+                private=private,
+                organization=self.organization,
+                **kwargs,
+            )
+            logging.info(f"Project created with name '{project_name}' !")
+            return proj
 
         except JsonApiException as error:
             if hasattr(error, "detail") and "already exists" in error.detail:  # type: ignore
