@@ -154,7 +154,7 @@ class Client(Tx):
 
     @ensure_login
     def update_source_translation(
-        self, *, project_slug: str, resource_slug: str, path_to_file: str
+        self, project_slug: str, resource_slug: str, path_to_file: str
     ):
         """
         Update the translation strings for the given resource using the content of the file
@@ -186,16 +186,27 @@ class Client(Tx):
     @ensure_login
     def get_translation(
         self,
-        *,
         project_slug: str,
         resource_slug: str,
         language_code: str,
-        path_to_output_dir: str,
+        path_to_output_file: None | str = None,
+        path_to_output_dir: None | str = None,
     ) -> str:
         """Fetch the translation resource matching the given language"""
+        if path_to_output_dir and not path_to_output_file:
+            path_to_parent = Path(path_to_output_dir)
+            path_to_output_file = str(
+                path_to_parent.joinpath(f"{resource_slug}_{language_code}")
+            )
+        elif path_to_output_file and not path_to_output_dir:
+            path_to_parent = Path(path_to_output_file).parent
+        else:
+            raise ValueError(
+                f"get_translation needs exactly one between 'path_to_output_file' (str) or 'path_to_output_dir (str)'. "
+            )
+
+        Path.mkdir(path_to_parent, parents=True, exist_ok=True)
         language = tx_api.Language.get(code=language_code)
-        path_to_output_dir_as_path = Path(path_to_output_dir)
-        Path.mkdir(path_to_output_dir_as_path, parents=True, exist_ok=True)
 
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
@@ -204,16 +215,13 @@ class Client(Tx):
                         resource=resource, language=language
                     )
                     translated_content = requests.get(url).text
-                    path_to_file = path_to_output_dir_as_path.joinpath(
-                        f"{resource_slug}_{language_code}"
-                    )
-                    with open(path_to_file, "w") as fh:
+                    with open(path_to_output_file, "w") as fh:
                         fh.write(translated_content)
 
                     logging.info(
                         f"Translations downloaded and written to file (resource: {resource_slug})"
                     )
-                    return str(path_to_file)
+                    return str(path_to_output_file)
 
                 else:
                     raise ValueError(

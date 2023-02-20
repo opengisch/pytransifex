@@ -16,6 +16,7 @@ class TestNewApi(unittest.TestCase):
         cls.path_to_input_dir = Path.cwd().joinpath("tests", "data", "resources")
         cls.path_to_file = cls.path_to_input_dir.joinpath("test_resource_fr.po")
         cls.output_dir = Path.cwd().joinpath("tests", "output")
+        cls.output_file = cls.output_dir.joinpath("test_resource_fr_DOWNLOADED.po")
 
         cls.tx = client
         cls.project_slug = test_config["project_slug"]
@@ -49,11 +50,7 @@ class TestNewApi(unittest.TestCase):
         # Done in setUpClass
         pass
 
-    def test3_list_resources(self):
-        _ = self.tx.list_resources(project_slug=self.project_slug)
-        assert True
-
-    def test4_create_resource(self):
+    def test3_create_resource(self):
         self.tx.create_resource(
             project_slug=self.project_slug,
             resource_name=self.resource_name,
@@ -61,6 +58,11 @@ class TestNewApi(unittest.TestCase):
             path_to_file=str(self.path_to_file),
         )
         assert True
+
+    def test4_list_resources(self):
+        resources = self.tx.list_resources(project_slug=self.project_slug)
+        logging.info(f"Resources found: {resources}")
+        assert resources
 
     def test5_update_source_translation(self):
         self.tx.update_source_translation(
@@ -77,14 +79,15 @@ class TestNewApi(unittest.TestCase):
         languages = self.tx.list_languages(
             project_slug=self.project_slug, resource_slug=self.resource_slug
         )
-        assert languages is not None
+        logging.info(f"Languages found: {languages}")
+        assert languages
 
     def test8_get_translation(self):
         path_to_output_file = self.tx.get_translation(
             project_slug=self.project_slug,
             resource_slug=self.resource_slug,
             language_code="fr_CH",
-            path_to_output_dir=str(self.output_dir),
+            path_to_output_file=str(self.output_file),
         )
         assert Path.exists(Path(path_to_output_file))
 
