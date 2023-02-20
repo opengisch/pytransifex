@@ -58,7 +58,7 @@ class TestCli(unittest.TestCase):
         assert passed
 
     def test2_push(self):
-        result = self.runner.invoke(cli, ["push", "-in", str(self.path_to_file)])
+        result = self.runner.invoke(cli, ["push", "-in", str(self.path_to_input_dir)])
         passed = result.exit_code == 0
         logging.info(result.output)
         assert passed

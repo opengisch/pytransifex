@@ -21,7 +21,7 @@ class Client(Tx):
     '**kwargs' is used in methods that may need to forward extra named arguments to the API.
     """
 
-    def __init__(self, config: ApiConfig, defer_login: bool = False):
+    def __init__(self, config: ApiConfig, defer_login=False, reset=False):
         """Extract config values, consumes API token against SDK client"""
         self.api_token = config.api_token
         self.host = config.host_name
@@ -237,16 +237,30 @@ class Client(Tx):
             )
 
     @ensure_login
-    def list_languages(self, project_slug: str, resource_slug: str) -> list[Any]:
+    def list_languages(self, project_slug: str, resource_slug: str) -> list[str]:
         """
         List languages for which there exist translations under the given resource.
         """
         if self.projects:
             if project := self.projects.get(slug=project_slug):
                 if resource := project.fetch("resources").get(slug=resource_slug):
-                    logging.info(f"Obtained these languages")
-                    # FIXME: Extract a list[str] mapping to resource languages
-                    return resource
+                    it = tx_api.ResourceLanguageStats.filter(
+                        project=project, resource=resource
+                    ).all()
+
+                    language_codes = []
+                    for tr in it:
+                        """
+                        FIXME
+                        This is hideous and probably unsound for some language_codes.
+                        Couldn't find a more direct accessor to language codes.
+                        """
+                        code = str(tr).rsplit("_", 1)[-1][:-1]
+                        language_codes.append(code)
+
+                    logging.info(f"Obtained these languages: {language_codes}")
+                    return language_codes
+
                 raise ValueError(
                     f"Unable to find any resource with this slug: '{resource_slug}'"
                 )
@@ -263,7 +277,7 @@ class Client(Tx):
         *,
         project_slug: str,
         language_code: str,
-        coordinators: None | list[Any] = None,
+        coordinators: None | list[str] = None,
     ):
         """Create a new language resource in the remote Transifex repository"""
         if project := self.get_project(project_slug=project_slug):

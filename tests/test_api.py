@@ -107,7 +107,7 @@ class TestNewApi(unittest.TestCase):
 
     def test9_project_exists(self):
         verdict = self.tx.project_exists(project_slug=self.project_slug)
-        assert verdict is not None
+        assert verdict
 
     def test10_ping(self):
         self.tx.ping()
