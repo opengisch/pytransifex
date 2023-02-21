@@ -229,33 +229,15 @@ class Client(Tx):
             )
 
     @ensure_login
-    def list_languages(self, project_slug: str, resource_slug: str) -> list[str]:
+    def list_languages(self, project_slug: str) -> list[str]:
         """
         List languages for which there exist translations under the given resource.
         """
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                if resource := project.fetch("resources").get(slug=resource_slug):
-                    it = tx_api.ResourceLanguageStats.filter(
-                        project=project, resource=resource
-                    ).all()
+                languages = project.fetch("languages").all()
+                return [lang.code for lang in languages]
 
-                    language_codes = []
-                    for tr in it:
-                        """
-                        FIXME
-                        This is hideous and probably unsound for some language_codes.
-                        Couldn't find a more direct accessor to language codes.
-                        """
-                        code = str(tr).rsplit("_", 1)[-1][:-1]
-                        language_codes.append(code)
-
-                    logger.info(f"Obtained these languages: {language_codes}")
-                    return language_codes
-
-                raise ValueError(
-                    f"Unable to find any resource with this slug: '{resource_slug}'"
-                )
             raise ValueError(
                 f"Unable to find any project with this slug: '{project_slug}'"
             )

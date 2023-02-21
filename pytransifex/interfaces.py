@@ -61,7 +61,7 @@ class Tx(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def list_languages(self, project_slug: str, resource_slug: str) -> list[Any]:
+    def list_languages(self, project_slug: str) -> list[Any]:
         raise NotImplementedError
 
     @abstractmethod

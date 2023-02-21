@@ -77,9 +77,7 @@ class TestNewApi(unittest.TestCase):
         self.tx.create_language(project_slug=self.project_slug, language_code="fr_CH")
 
     def test7_list_languages(self):
-        languages = self.tx.list_languages(
-            project_slug=self.project_slug, resource_slug=self.resource_slug
-        )
+        languages = self.tx.list_languages(project_slug=self.project_slug)
         logger.info(f"Languages found: {languages}")
         assert languages
 
