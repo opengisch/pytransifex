@@ -29,9 +29,8 @@ class TestNewApi(unittest.TestCase):
                 f"Unable to complete test with broken tests inputs. Found missing: {missing}"
             )
 
-        if project := cls.tx.get_project(project_slug=cls.project_slug):
-            logging.info("Found old project, removing.")
-            project.delete()
+        logging.info("Deleting test project if it already exists")
+        cls.tx.delete_project(project_slug=cls.project_slug)
 
         logging.info("Creating a brand new project")
         cls.tx.create_project(

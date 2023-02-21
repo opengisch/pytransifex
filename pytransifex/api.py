@@ -79,6 +79,12 @@ class Client(Tx):
                 logging.error(f"Unable to create project; API replied with {error}")
 
     @ensure_login
+    def delete_project(self, project_slug: str):
+        if project := self.get_project(project_slug=project_slug):
+            project.delete()
+            logging.info(f"Deleted project: {project_slug}")
+
+    @ensure_login
     def get_project(self, project_slug: str) -> None | Resource:
         """Fetches the project matching the given slug"""
         if self.projects:
