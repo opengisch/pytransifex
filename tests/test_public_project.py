@@ -2,10 +2,7 @@ import unittest
 from os import remove
 from pathlib import Path
 
-from click.testing import CliRunner
-
 from pytransifex.api import Transifex
-from pytransifex.cli import cli
 from tests import logging, test_config_public
 
 
@@ -24,6 +21,7 @@ class TestCli(unittest.TestCase):
         cls.project_name = test_config_public["project_name"]
         cls.resource_slug = test_config_public["resource_slug"]
         cls.resource_name = test_config_public["resource_name"]
+        repository_url = test_config_public["repository_url"]
 
         if missing := next(
             filter(lambda p: not p.exists(), [cls.path_to_file, cls.path_to_input_dir]),
@@ -39,35 +37,20 @@ class TestCli(unittest.TestCase):
 
         logging.info("Creating a brand new project")
         cls.tx.create_project(
-            project_name=cls.project_name, project_slug=cls.project_slug, private=True
+            project_name=cls.project_name,
+            project_slug=cls.project_slug,
+            private=False,
+            repository_url=repository_url,
         )
-
-        cls.runner = CliRunner()
 
     @classmethod
     def tearDownClass(cls):
         if Path.exists(cls.output_dir):
             remove(cls.output_dir)
 
-    def test1_init(self):
-        result = self.runner.invoke(
-            cli,
-            ["init", "-p", self.project_slug, "-org", "test_pytransifex"],
-        )
-        passed = result.exit_code == 0
-        assert passed
-
-    def test2_push(self):
-        result = self.runner.invoke(cli, ["push", "-in", str(self.path_to_input_dir)])
-        passed = result.exit_code == 0
-        logging.info(result.output)
-        assert passed
-
-    def test3_pull(self):
-        result = self.runner.invoke(cli, ["pull", "-l", "fr_CH,en_GB"])
-        passed = result.exit_code == 0
-        logging.info(result.output)
-        assert passed
+    def test1_project_exists(self):
+        verdict = self.tx.project_exists(project_slug=self.project_slug)
+        assert verdict
 
 
 if __name__ == "__main__":

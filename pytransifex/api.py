@@ -1,7 +1,6 @@
 import logging
-from os import mkdir
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import requests
 from transifex.api import transifex_api as tx_api
@@ -18,9 +17,11 @@ class Client(Tx):
     """
     The proper Transifex client expected by the cli and other consumers.
     By default instances are created and logged in 'lazyly' -- when creation or login cannot be deferred any longer.
+    Methods with more than 2 parameters don't allow for positional arguments.
+    '**kwargs' is used in methods that may need to forward extra named arguments to the API.
     """
 
-    def __init__(self, config: ApiConfig, defer_login: bool = False):
+    def __init__(self, config: ApiConfig, defer_login=False, reset=False):
         """Extract config values, consumes API token against SDK client"""
         self.api_token = config.api_token
         self.host = config.host_name
@@ -48,44 +49,28 @@ class Client(Tx):
     @ensure_login
     def create_project(
         self,
+        *,
         project_slug: str,
         project_name: str | None = None,
         source_language_code: str = "en_GB",
         private: bool = False,
-        *args,  # absorbing extra args
-        **kwargs,  # absorbing extra kwargs
+        **kwargs,
     ) -> None | Resource:
         """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
-
-        if project_name is None:
-            project_name = project_slug
+        project_name = project_name or project_slug
 
         try:
-            if private:
-                return tx_api.Project.create(
-                    name=project_name,
-                    slug=project_slug,
-                    source_language=source_language,
-                    private=private,
-                    organization=self.organization,
-                )
-            else:
-                if repository_url := kwargs.get("repository_url", None):
-                    return tx_api.Project.create(
-                        name=project_name,
-                        slug=project_slug,
-                        source_language=source_language,
-                        private=private,
-                        repository_url=repository_url,
-                        organization=self.organization,
-                    )
-                else:
-                    raise ValueError(
-                        f"Private projects need to pass a 'repository_url' (non-empty string) argument."
-                    )
-
-            logging.info("Project created!")
+            proj = tx_api.Project.create(
+                name=project_name,
+                slug=project_slug,
+                source_language=source_language,
+                private=private,
+                organization=self.organization,
+                **kwargs,
+            )
+            logging.info(f"Project created with name '{project_name}' !")
+            return proj
 
         except JsonApiException as error:
             if hasattr(error, "detail") and "already exists" in error.detail:  # type: ignore
@@ -113,21 +98,23 @@ class Client(Tx):
             else:
                 return []
 
-        raise Exception(
+        raise ValueError(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
 
     @ensure_login
     def create_resource(
         self,
+        *,
         project_slug: str,
-        path_to_file: Path,
+        path_to_file: str,
         resource_slug: str | None = None,
         resource_name: str | None = None,
+        **kwargs,
     ):
         """Create a resource using the given file contents, slugs and names"""
         if not (resource_slug or resource_name):
-            raise Exception("Please give either a resource_slug or a resource_name")
+            raise ValueError("Please give either a resource_slug or a resource_name")
 
         if project := self.get_project(project_slug=project_slug):
             resource = tx_api.Resource.create(
@@ -135,6 +122,7 @@ class Client(Tx):
                 name=resource_name or resource_slug,
                 slug=resource_slug or resource_name,
                 i18n_format=tx_api.I18nFormat(id=self.i18n_type),
+                **kwargs,
             )
 
             with open(path_to_file, "r") as fh:
@@ -144,20 +132,20 @@ class Client(Tx):
             logging.info(f"Resource created: {resource_slug or resource_name}")
 
         else:
-            raise Exception(
+            raise ValueError(
                 f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
             )
 
     @ensure_login
     def update_source_translation(
-        self, project_slug: str, resource_slug: str, path_to_file: Path
+        self, project_slug: str, resource_slug: str, path_to_file: str
     ):
         """
         Update the translation strings for the given resource using the content of the file
         passsed as argument
         """
         if not "slug" in self.organization.attributes:
-            raise Exception(
+            raise ValueError(
                 "Unable to fetch resource for this organization; define an 'organization slug' first."
             )
 
@@ -175,7 +163,7 @@ class Client(Tx):
                     logging.info(f"Source updated for resource: {resource_slug}")
                     return
 
-        raise Exception(
+        raise ValueError(
             f"Unable to find resource '{resource_slug}' in project '{project_slug}'"
         )
 
@@ -185,11 +173,24 @@ class Client(Tx):
         project_slug: str,
         resource_slug: str,
         language_code: str,
-        output_dir: Path,
-    ):
+        path_to_output_file: None | str = None,
+        path_to_output_dir: None | str = None,
+    ) -> str:
         """Fetch the translation resource matching the given language"""
+        if path_to_output_dir and not path_to_output_file:
+            path_to_parent = Path(path_to_output_dir)
+            path_to_output_file = str(
+                path_to_parent.joinpath(f"{resource_slug}_{language_code}")
+            )
+        elif path_to_output_file and not path_to_output_dir:
+            path_to_parent = Path(path_to_output_file).parent
+        else:
+            raise ValueError(
+                f"get_translation needs exactly one between 'path_to_output_file' (str) or 'path_to_output_dir (str)'. "
+            )
+
+        Path.mkdir(path_to_parent, parents=True, exist_ok=True)
         language = tx_api.Language.get(code=language_code)
-        file_name = Path.joinpath(output_dir, resource_slug)
 
         if project := self.get_project(project_slug=project_slug):
             if resources := project.fetch("resources"):
@@ -198,54 +199,69 @@ class Client(Tx):
                         resource=resource, language=language
                     )
                     translated_content = requests.get(url).text
-
-                    if not Path.exists(output_dir):
-                        mkdir(output_dir)
-
-                    with open(file_name, "w") as fh:
+                    with open(path_to_output_file, "w") as fh:
                         fh.write(translated_content)
 
                     logging.info(
                         f"Translations downloaded and written to file (resource: {resource_slug})"
                     )
+                    return str(path_to_output_file)
 
                 else:
-                    raise Exception(
+                    raise ValueError(
                         f"Unable to find any resource with this slug: '{resource_slug}'"
                     )
             else:
-                raise Exception(
+                raise ValueError(
                     f"Unable to find any resource for this project: '{project_slug}'"
                 )
         else:
-            raise Exception(
+            raise ValueError(
                 f"Couldn't find any project with this slug: '{project_slug}'"
             )
 
     @ensure_login
-    def list_languages(self, project_slug: str) -> list[Any]:
+    def list_languages(self, project_slug: str, resource_slug: str) -> list[str]:
         """
-        List all languages for which there is at least 1 resource registered
-        under the parameterised project
+        List languages for which there exist translations under the given resource.
         """
         if self.projects:
             if project := self.projects.get(slug=project_slug):
-                languages = project.fetch("languages")
-                logging.info(f"Obtained these languages")
-                return languages
-            raise Exception(
+                if resource := project.fetch("resources").get(slug=resource_slug):
+                    it = tx_api.ResourceLanguageStats.filter(
+                        project=project, resource=resource
+                    ).all()
+
+                    language_codes = []
+                    for tr in it:
+                        """
+                        FIXME
+                        This is hideous and probably unsound for some language_codes.
+                        Couldn't find a more direct accessor to language codes.
+                        """
+                        code = str(tr).rsplit("_", 1)[-1][:-1]
+                        language_codes.append(code)
+
+                    logging.info(f"Obtained these languages: {language_codes}")
+                    return language_codes
+
+                raise ValueError(
+                    f"Unable to find any resource with this slug: '{resource_slug}'"
+                )
+            raise ValueError(
                 f"Unable to find any project with this slug: '{project_slug}'"
             )
-        raise Exception(
+        raise ValueError(
             f"Unable to find any project under this organization: '{self.organization}'"
         )
 
     @ensure_login
     def create_language(
         self,
+        *,
         project_slug: str,
         language_code: str,
-        coordinators: None | list[Any] = None,
+        coordinators: None | list[str] = None,
     ):
         """Create a new language resource in the remote Transifex repository"""
         if project := self.get_project(project_slug=project_slug):
@@ -254,14 +270,22 @@ class Client(Tx):
             if coordinators:
                 project.add("coordinators", coordinators)
 
-            logging.info(f"Created language resource for {language_code}")
+            logging.info(
+                f"Created language resource for {language_code} and added these coordinators: {coordinators}"
+            )
 
     @ensure_login
     def project_exists(self, project_slug: str) -> bool:
         """Check if the project exists in the remote Transifex repository"""
-        if self.projects and self.projects.get(slug=project_slug):
-            return True
-        return False
+        try:
+            if not self.projects:
+                return False
+            elif self.projects.get(slug=project_slug):
+                return True
+            else:
+                return False
+        except DoesNotExist:
+            return False
 
     @ensure_login
     def ping(self) -> bool:
@@ -279,21 +303,22 @@ class Client(Tx):
                 if resource_stats := tx_api.ResourceLanguageStats(project=project):
                     return resource_stats.to_dict()
 
-        raise Exception(f"Unable to find translation for this project {project_slug}")
+        raise ValueError(f"Unable to find translation for this project {project_slug}")
 
     @ensure_login
     def pull(
         self,
+        *,
         project_slug: str,
         resource_slugs: list[str],
         language_codes: list[str],
-        output_dir: Path,
+        path_to_output_dir: str,
     ):
         """Pull resources from project."""
         args = []
         for l_code in language_codes:
             for slug in resource_slugs:
-                args.append(tuple([project_slug, slug, l_code, output_dir]))
+                args.append(tuple([project_slug, slug, l_code, path_to_output_dir]))
 
         res = concurrently(
             fn=self.get_translation,
@@ -304,12 +329,12 @@ class Client(Tx):
 
     @ensure_login
     def push(
-        self, project_slug: str, resource_slugs: list[str], path_to_files: list[Path]
+        self, *, project_slug: str, resource_slugs: list[str], path_to_files: list[str]
     ):
         """Push resources with files under project."""
         if len(resource_slugs) != len(path_to_files):
             raise ValueError(
-                f"Resources slugs ({len(resource_slugs)}) and Path to files ({len(path_to_files)}) must be equal in size!"
+                f"Resources slugs ({len(resource_slugs)}) and path to files ({len(path_to_files)}) must be equal in size!"
             )
 
         resource_zipped_with_path = list(zip(resource_slugs, path_to_files))
@@ -352,7 +377,7 @@ class Transifex:
 
     client = None
 
-    def __new__(cls, *, defer_login: bool = False, **kwargs):
+    def __new__(cls, *, defer_login: bool = False, **kwargs) -> Optional["Client"]:
         if not cls.client:
             try:
                 if kwargs:
@@ -363,11 +388,9 @@ class Transifex:
                     )
                     config = ApiConfig.from_env()
 
-                cls.client = Client(config, defer_login)
+                return Client(config, defer_login)
 
-            except Exception as error:
+            except ValueError as error:
                 available = list(ApiConfig._fields)
                 msg = f"Unable to define a proper config. API initialization uses the following fields, with only 'project_slug' optional: {available}"
                 logging.error(f"{msg}:\n{error}")
-
-        return cls.client

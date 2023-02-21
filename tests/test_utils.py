@@ -26,3 +26,7 @@ class TestUtils(unittest.TestCase):
     def test2_map_async(self):
         res = concurrently(fn=fn, args=self.args)
         assert res == self.res
+
+
+if __name__ == "__main__":
+    unittest.main()
