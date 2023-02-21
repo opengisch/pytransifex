@@ -1,9 +1,10 @@
 import logging
+import sys
 from pathlib import Path
 
 import toml
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 private = Path.cwd().joinpath("./tests/data/test_config.toml")
 test_config = toml.load(private)

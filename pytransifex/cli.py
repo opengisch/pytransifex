@@ -8,6 +8,7 @@ import click
 from pytransifex.api import Transifex
 from pytransifex.config import CliSettings
 
+logger = logging.getLogger(__name__)
 client = Transifex(defer_login=True)
 assert client
 

@@ -6,6 +6,8 @@ from pytransifex.api import Transifex
 from pytransifex.interfaces import Tx
 from tests import logging, test_config_public
 
+logger = logging.getLogger(__name__)
+
 
 class TestNewApi(unittest.TestCase):
     @classmethod
@@ -29,10 +31,10 @@ class TestNewApi(unittest.TestCase):
                 f"Unable to complete test with broken tests inputs. Found missing: {missing}"
             )
 
-        logging.info("Deleting test project if it already exists")
+        logger.info("Deleting test project if it already exists")
         cls.tx.delete_project(project_slug=cls.project_slug)
 
-        logging.info("Creating a brand new project")
+        logger.info("Creating a brand new project")
         cls.tx.create_project(
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
@@ -60,7 +62,7 @@ class TestNewApi(unittest.TestCase):
 
     def test4_list_resources(self):
         resources = self.tx.list_resources(project_slug=self.project_slug)
-        logging.info(f"Resources found: {resources}")
+        logger.info(f"Resources found: {resources}")
         assert resources
 
     def test5_update_source_translation(self):
@@ -78,7 +80,7 @@ class TestNewApi(unittest.TestCase):
         languages = self.tx.list_languages(
             project_slug=self.project_slug, resource_slug=self.resource_slug
         )
-        logging.info(f"Languages found: {languages}")
+        logger.info(f"Languages found: {languages}")
         assert languages
 
     def test8_get_translation(self):
@@ -101,7 +103,7 @@ class TestNewApi(unittest.TestCase):
             with open(path_to_output_file, "r") as fh:
                 f2 = fh.readlines()
             res = list(diff.compare(f1, f2))
-            logging.warning(f"Notice that the two files were found to differ:")
+            logger.warning(f"Notice that the two files were found to differ:")
             stdout.writelines(res)
 
     def test9_project_exists(self):
@@ -114,7 +116,7 @@ class TestNewApi(unittest.TestCase):
 
     def test11_stats(self):
         stats = self.tx.get_project_stats(project_slug=self.project_slug)
-        logging.info(str(stats))
+        logger.info(str(stats))
         assert stats
 
     def test12_stats(self):
