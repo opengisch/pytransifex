@@ -4,7 +4,6 @@ from typing import Any, Optional
 
 import requests
 from transifex.api import transifex_api as tx_api
-from transifex.api.jsonapi import JsonApiException
 from transifex.api.jsonapi.exceptions import DoesNotExist
 from transifex.api.jsonapi.resources import Resource
 
@@ -57,28 +56,21 @@ class Client(Tx):
         source_language_code: str = "en_GB",
         private: bool = False,
         **kwargs,
-    ) -> None | Resource:
+    ):
         """Create a project."""
         source_language = tx_api.Language.get(code=source_language_code)
         project_name = project_name or project_slug
 
-        try:
-            proj = tx_api.Project.create(
-                name=project_name,
-                slug=project_slug,
-                source_language=source_language,
-                private=private,
-                organization=self.organization,
-                **kwargs,
-            )
-            logger.info(f"Project created with name '{project_name}' !")
-            return proj
+        tx_api.Project.create(
+            name=project_name,
+            slug=project_slug,
+            source_language=source_language,
+            private=private,
+            organization=self.organization,
+            **kwargs,
+        )
 
-        except JsonApiException as error:
-            if hasattr(error, "detail") and "already exists" in error.detail:  # type: ignore
-                return self.get_project(project_slug=project_slug)
-            else:
-                logger.error(f"Unable to create project; API replied with {error}")
+        logger.info(f"Project created with name '{project_name}' !")
 
     @ensure_login
     def delete_project(self, project_slug: str):
@@ -270,7 +262,7 @@ class Client(Tx):
         try:
             if not self.projects:
                 return False
-            elif self.projects.get(slug=project_slug):
+            elif self.get_project(project_slug=project_slug):
                 return True
             else:
                 return False
@@ -283,7 +275,7 @@ class Client(Tx):
         Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
         There is no need to ping the server on the current implementation, as connection is handled by the SDK
         """
-        logger.info("'ping' is deprecated!")
+        logger.warning("'ping' is deprecated!")
         return True
 
     @ensure_login

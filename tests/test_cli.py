@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from pytransifex.api import Transifex
 from pytransifex.cli import cli
-from tests import logging, test_config_public
+from tests import logging, test_config
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +22,10 @@ class TestCli(unittest.TestCase):
         cls.output_dir = Path.cwd().joinpath("tests", "output")
 
         cls.tx = client
-        cls.project_slug = test_config_public["project_slug"]
-        cls.project_name = test_config_public["project_name"]
-        cls.resource_slug = test_config_public["resource_slug"]
-        cls.resource_name = test_config_public["resource_name"]
+        cls.project_slug = test_config["project_slug"]
+        cls.project_name = test_config["project_name"]
+        cls.resource_slug = test_config["resource_slug"]
+        cls.resource_name = test_config["resource_name"]
 
         if missing := next(
             filter(lambda p: not p.exists(), [cls.path_to_file, cls.path_to_input_dir]),
