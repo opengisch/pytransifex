@@ -12,6 +12,8 @@ from pytransifex.config import ApiConfig
 from pytransifex.interfaces import Tx
 from pytransifex.utils import concurrently, ensure_login
 
+logger = logging.getLogger(__name__)
+
 
 class Client(Tx):
     """
@@ -44,7 +46,7 @@ class Client(Tx):
         organization = tx_api.Organization.get(slug=self.organization_name)
         self.projects = organization.fetch("projects")
         self.organization = organization
-        logging.info(f"Logged in as organization: {self.organization_name}")
+        logger.info(f"Logged in as organization: {self.organization_name}")
 
     @ensure_login
     def create_project(
@@ -69,20 +71,20 @@ class Client(Tx):
                 organization=self.organization,
                 **kwargs,
             )
-            logging.info(f"Project created with name '{project_name}' !")
+            logger.info(f"Project created with name '{project_name}' !")
             return proj
 
         except JsonApiException as error:
             if hasattr(error, "detail") and "already exists" in error.detail:  # type: ignore
                 return self.get_project(project_slug=project_slug)
             else:
-                logging.error(f"Unable to create project; API replied with {error}")
+                logger.error(f"Unable to create project; API replied with {error}")
 
     @ensure_login
     def delete_project(self, project_slug: str):
         if project := self.get_project(project_slug=project_slug):
             project.delete()
-            logging.info(f"Deleted project: {project_slug}")
+            logger.info(f"Deleted project: {project_slug}")
 
     @ensure_login
     def get_project(self, project_slug: str) -> None | Resource:
@@ -90,7 +92,7 @@ class Client(Tx):
         if self.projects:
             try:
                 res = self.projects.get(slug=project_slug)
-                logging.info("Got the project!")
+                logger.info("Got the project!")
                 return res
             except DoesNotExist:
                 return None
@@ -135,11 +137,11 @@ class Client(Tx):
                 content = fh.read()
 
             tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
-            logging.info(f"Resource created: {resource_slug or resource_name}")
+            logger.info(f"Resource created: {resource_slug or resource_name}")
 
         else:
             raise ValueError(
-                f"Not project could be found wiht the slug '{project_slug}'. Please create a project first."
+                f"Not project could be found with the slug '{project_slug}'. Please create a project first."
             )
 
     @ensure_login
@@ -155,7 +157,7 @@ class Client(Tx):
                 "Unable to fetch resource for this organization; define an 'organization slug' first."
             )
 
-        logging.info(
+        logger.info(
             f"Updating source translation for resource {resource_slug} from file {path_to_file} (project: {project_slug})."
         )
 
@@ -166,7 +168,7 @@ class Client(Tx):
                         content = fh.read()
 
                     tx_api.ResourceStringsAsyncUpload.upload(content, resource=resource)
-                    logging.info(f"Source updated for resource: {resource_slug}")
+                    logger.info(f"Source updated for resource: {resource_slug}")
                     return
 
         raise ValueError(
@@ -208,7 +210,7 @@ class Client(Tx):
                     with open(path_to_output_file, "w") as fh:
                         fh.write(translated_content)
 
-                    logging.info(
+                    logger.info(
                         f"Translations downloaded and written to file (resource: {resource_slug})"
                     )
                     return str(path_to_output_file)
@@ -248,7 +250,7 @@ class Client(Tx):
                         code = str(tr).rsplit("_", 1)[-1][:-1]
                         language_codes.append(code)
 
-                    logging.info(f"Obtained these languages: {language_codes}")
+                    logger.info(f"Obtained these languages: {language_codes}")
                     return language_codes
 
                 raise ValueError(
@@ -276,7 +278,7 @@ class Client(Tx):
             if coordinators:
                 project.add("coordinators", coordinators)
 
-            logging.info(
+            logger.info(
                 f"Created language resource for {language_code} and added these coordinators: {coordinators}"
             )
 
@@ -299,7 +301,7 @@ class Client(Tx):
         Exposing this just for the sake of satisfying qgis-plugin-cli's expectations
         There is no need to ping the server on the current implementation, as connection is handled by the SDK
         """
-        logging.info("'ping' is deprecated!")
+        logger.info("'ping' is deprecated!")
         return True
 
     @ensure_login
@@ -331,7 +333,7 @@ class Client(Tx):
             args=args,
         )
 
-        logging.info(f"Pulled {args} for {len(res)} results).")
+        logger.info(f"Pulled {args} for {len(res)} results).")
 
     @ensure_login
     def push(
@@ -345,15 +347,15 @@ class Client(Tx):
 
         resource_zipped_with_path = list(zip(resource_slugs, path_to_files))
         resources = self.list_resources(project_slug)
-        logging.info(
+        logger.info(
             f"Found {len(resources)} resource(s) for {project_slug}. Checking for missing resources and creating where necessary."
         )
         created_when_missing_resource = []
 
         for slug, path in resource_zipped_with_path:
-            logging.info(f"Slug: {slug}. Resources: {resources}.")
+            logger.info(f"Slug: {slug}. Resources: {resources}.")
             if not slug in resources:
-                logging.info(
+                logger.info(
                     f"{project_slug} is missing {slug}. Creating it from {path}."
                 )
                 self.create_resource(
@@ -372,7 +374,7 @@ class Client(Tx):
             args=args,
         )
 
-        logging.info(f"Pushed {args} for {len(res)} results.")
+        logger.info(f"Pushed {args} for {len(res)} results.")
 
 
 class Transifex:
@@ -389,7 +391,7 @@ class Transifex:
                 if kwargs:
                     config = ApiConfig(**kwargs)
                 else:
-                    logging.info(
+                    logger.info(
                         f"As you called 'Transifex' without argument, we'll try defining your project from environment variables."
                     )
                     config = ApiConfig.from_env()
@@ -399,4 +401,4 @@ class Transifex:
             except ValueError as error:
                 available = list(ApiConfig._fields)
                 msg = f"Unable to define a proper config. API initialization uses the following fields, with only 'project_slug' optional: {available}"
-                logging.error(f"{msg}:\n{error}")
+                logger.error(f"{msg}:\n{error}")

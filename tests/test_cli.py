@@ -8,6 +8,8 @@ from pytransifex.api import Transifex
 from pytransifex.cli import cli
 from tests import logging, test_config_public
 
+logger = logging.getLogger(__name__)
+
 
 class TestCli(unittest.TestCase):
     @classmethod
@@ -34,10 +36,10 @@ class TestCli(unittest.TestCase):
             )
 
         if project := cls.tx.get_project(project_slug=cls.project_slug):
-            logging.info("Found old project, removing.")
+            logger.info("Found old project, removing.")
             project.delete()
 
-        logging.info("Creating a brand new project")
+        logger.info("Creating a brand new project")
         cls.tx.create_project(
             project_name=cls.project_name, project_slug=cls.project_slug, private=True
         )
@@ -60,13 +62,13 @@ class TestCli(unittest.TestCase):
     def test2_push(self):
         result = self.runner.invoke(cli, ["push", "-in", str(self.path_to_input_dir)])
         passed = result.exit_code == 0
-        logging.info(result.output)
+        logger.info(result.output)
         assert passed
 
     def test3_pull(self):
         result = self.runner.invoke(cli, ["pull", "-l", "fr_CH,en_GB"])
         passed = result.exit_code == 0
-        logging.info(result.output)
+        logger.info(result.output)
         assert passed
 
 

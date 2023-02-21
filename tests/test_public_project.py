@@ -5,6 +5,8 @@ from pathlib import Path
 from pytransifex.api import Transifex
 from tests import logging, test_config_public
 
+logger = logging.getLogger(__name__)
+
 
 class TestCli(unittest.TestCase):
     @classmethod
@@ -32,10 +34,10 @@ class TestCli(unittest.TestCase):
             )
 
         if project := cls.tx.get_project(project_slug=cls.project_slug):
-            logging.info("Found old project, removing.")
+            logger.info("Found old project, removing.")
             project.delete()
 
-        logging.info("Creating a brand new project")
+        logger.info("Creating a brand new project")
         cls.tx.create_project(
             project_name=cls.project_name,
             project_slug=cls.project_slug,

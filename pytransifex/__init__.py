@@ -1,7 +1,8 @@
 import logging
+import sys
 
 from pytransifex.api import Transifex
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 VERSION = "2.dev"
