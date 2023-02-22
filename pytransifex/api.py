@@ -260,12 +260,9 @@ class Client(Tx):
     def project_exists(self, project_slug: str) -> bool:
         """Check if the project exists in the remote Transifex repository"""
         try:
-            if not self.projects:
-                return False
-            elif self.get_project(project_slug=project_slug):
+            if self.get_project(project_slug=project_slug):
                 return True
-            else:
-                return False
+            return False
         except DoesNotExist:
             return False
 
