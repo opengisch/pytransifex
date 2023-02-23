@@ -66,7 +66,7 @@ class Translation:
         lang = self.parameters.translation_source_language
         self.ts_file = f"{plugin_path}/i18n/{tx}_{lang}.ts"
 
-        if self.tx_client.project_exists(parameters.transifex_project):
+        if self.tx_client.project_exists(parameters.project_slug):
             logger.debug(
                 f"Project {self.parameters.transifex_organization}/"
                 f"{self.parameters.transifex_project} exists on Transifex"
@@ -79,7 +79,7 @@ class Translation:
                 f"{self.parameters.transifex_project}"
             )
             self.tx_client.create_project(
-                project_slug=self.parameters.transifex_project,
+                project_slug=self.parameters.project_slug,
                 private=False,
                 repository_url=self.parameters.repository_url,
                 source_language_code=parameters.translation_source_language,
@@ -92,7 +92,7 @@ class Translation:
                 f"{self.parameters.transifex_resource} with {self.ts_file}"
             )
             self.tx_client.create_resource(
-                project_slug=self.parameters.transifex_project,
+                project_slug=self.parameters.project_slug,
                 path_to_file=self.ts_file,
                 resource_slug=self.parameters.transifex_resource,
             )
@@ -177,7 +177,7 @@ class Translation:
         """
         resource = self.__get_resource()
         existing_langs = self.tx_client.list_languages(
-            project_slug=self.parameters.transifex_project
+            project_slug=self.parameters.project_slug
         )
         lang = self.parameters.translation_source_language
         if lang in existing_langs:
@@ -190,7 +190,7 @@ class Translation:
             if lang not in existing_langs:
                 logger.debug(f"Creating missing language: {lang}")
                 self.tx_client.create_language(
-                    project_slug=self.parameters.transifex_project,
+                    project_slug=self.parameters.project_slug,
                     language_code=lang,
                     coordinators=[self.parameters.transifex_coordinator],
                 )
@@ -199,7 +199,7 @@ class Translation:
             ts_file = f"{self.parameters.plugin_path}/i18n/{self.parameters.transifex_resource}_{lang}.ts"
             logger.debug(f"Downloading translation file: {ts_file}")
             self.tx_client.get_translation(
-                project_slug=self.parameters.transifex_project,
+                project_slug=self.parameters.project_slug,
                 resource_slug=resource.slug,
                 language_code=lang,
                 path_to_output_file=ts_file,
@@ -212,17 +212,19 @@ class Translation:
             f"with file {self.ts_file}"
         )
         result = self.tx_client.update_source_translation(
-            project_slug=self.parameters.transifex_project,
-            resource_slug=resource["slug"],
+            project_slug=self.parameters.project_slug,
+            resource_slug=resource.slug,
             path_to_file=self.ts_file,
         )
         logger.info(f"Translation resource updated: {result}")
 
     def __get_resource(self) -> dict:
-        resources = self.tx_client.list_resources(self.parameters.transifex_project)
+        resources = self.tx_client.list_resources(
+            project_slug=self.parameters.project_slug
+        )
         if len(resources) == 0:
             logger.error(
-                f"Project '{self.parameters.transifex_project}' has no resource on Transifex"
+                f"Project '{self.parameters.project_slug}' has no resource on Transifex"
             )
             sys.exit(1)
         if len(resources) > 1:

@@ -85,12 +85,19 @@ class Client(Tx):
     def get_project(self, project_slug: str) -> None | Resource:
         """Fetches the project matching the given slug"""
         if self.projects:
+            logger.info(
+                f"Attempting to get 'o:{self.organization_name}:p:{project_slug}'"
+            )
             try:
                 res = self.projects.get(slug=project_slug)
                 logger.info("Got the project!")
                 return res
             except DoesNotExist:
                 return None
+            """
+            except MultipleObjectsReturned:
+                pass
+            """
 
     @ensure_login
     def list_resources(self, project_slug: str) -> list[Any]:
