@@ -53,11 +53,14 @@ class Client(Tx):
         *,
         project_slug: str,
         project_name: str | None = None,
-        source_language_code: str = "en_GB",
+        source_language_code: str = "en",
         private: bool = False,
         **kwargs,
     ):
         """Create a project."""
+        logger.info(
+            f"Trying to create project from these arguments: project_slug = {project_slug}, "
+        )
         source_language = tx_api.Language.get(code=source_language_code)
         project_name = project_name or project_slug
 
@@ -82,12 +85,19 @@ class Client(Tx):
     def get_project(self, project_slug: str) -> None | Resource:
         """Fetches the project matching the given slug"""
         if self.projects:
+            logger.info(
+                f"Attempting to get 'o:{self.organization_name}:p:{project_slug}'"
+            )
             try:
                 res = self.projects.get(slug=project_slug)
                 logger.info("Got the project!")
                 return res
             except DoesNotExist:
                 return None
+            """
+            except MultipleObjectsReturned:
+                pass
+            """
 
     @ensure_login
     def list_resources(self, project_slug: str) -> list[Any]:
@@ -247,7 +257,9 @@ class Client(Tx):
     ):
         """Create a new language resource in the remote Transifex repository"""
         if project := self.get_project(project_slug=project_slug):
-            project.add("languages", [tx_api.Language.get(code=language_code)])
+            if language := tx_api.Language.get(code=language_code):
+                logger.debug(f"Adding {language.code} to {project_slug}")
+                project.add("languages", [language])
 
             if coordinators:
                 project.add("coordinators", coordinators)
@@ -260,12 +272,9 @@ class Client(Tx):
     def project_exists(self, project_slug: str) -> bool:
         """Check if the project exists in the remote Transifex repository"""
         try:
-            if not self.projects:
-                return False
-            elif self.get_project(project_slug=project_slug):
+            if self.get_project(project_slug=project_slug):
                 return True
-            else:
-                return False
+            return False
         except DoesNotExist:
             return False
 

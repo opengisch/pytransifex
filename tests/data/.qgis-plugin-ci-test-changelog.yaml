@@ -1,0 +1,6 @@
+project_slug: test_project_pytransifex_public
+transifex_organization: test_pytransifex
+transifex_coordinator: john_doe
+translation_languages:
+  - fr
+  - en
