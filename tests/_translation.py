@@ -4,8 +4,9 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from typing import Optional
 
 from pytransifex.api import Transifex
 
@@ -14,23 +15,23 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Parameters:
-    changelog_include: bool
-    changelog_path: str
-    changelog_number_of_entries: int
-    create_date: date
-    github_organization_slug: str
-    lrelease_path: str
-    plugin_name: str
-    plugin_path: str
-    project_slug: str
-    pylupdate5_path: str
-    repository_url: str
-    transifex_coordinator: str
-    transifex_organization: str
-    transifex_project: str
-    transifex_resource: str
-    translation_source_language: str
-    translation_languages: str
+    changelog_include: Optional[bool] = False
+    changelog_path: Optional[str] = None
+    changelog_number_of_entries: Optional[int] = None
+    create_date: Optional[date] = datetime.now()
+    github_organization_slug: Optional[str] = None
+    lrelease_path: Optional[str] = None
+    plugin_name: Optional[str] = None
+    plugin_path: Optional[str] = None
+    project_slug: Optional[str] = None
+    pylupdate5_path: Optional[str] = None
+    repository_url: Optional[str] = None
+    transifex_coordinator: Optional[str] = None
+    transifex_organization: Optional[str] = None
+    transifex_project: Optional[str] = None
+    transifex_resource: Optional[str] = None
+    translation_source_language: Optional[str] = None
+    translation_languages: Optional[str] = None
 
 
 def touch_file(path, update_time: bool = False, create_dir: bool = True):
@@ -48,6 +49,7 @@ class Translation:
     def __init__(
         self, parameters: Parameters, transifex_token: str, create_project: bool = True
     ):
+        logger.info(f"Overriding test config with: {parameters}")
         client = Transifex(
             api_token=transifex_token,
             organization_name=parameters.transifex_organization,
@@ -177,9 +179,11 @@ class Translation:
         existing_langs = self.tx_client.list_languages(
             project_slug=self.parameters.transifex_project
         )
-        existing_langs.remove(self.parameters.translation_source_language)
+        lang = self.parameters.translation_source_language
+        if lang in existing_langs:
+            existing_langs.remove(lang)
         logger.info(
-            f"{len(existing_langs)} languages found for resource {resource.get('slug')}:"
+            f"{len(existing_langs)} languages found for resource :"
             f" ({existing_langs})"
         )
         for lang in self.parameters.translation_languages:
@@ -196,7 +200,7 @@ class Translation:
             logger.debug(f"Downloading translation file: {ts_file}")
             self.tx_client.get_translation(
                 project_slug=self.parameters.transifex_project,
-                resource_slug=resource["slug"],
+                resource_slug=resource.slug,
                 language_code=lang,
                 path_to_output_file=ts_file,
             )

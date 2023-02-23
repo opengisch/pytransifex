@@ -53,11 +53,14 @@ class Client(Tx):
         *,
         project_slug: str,
         project_name: str | None = None,
-        source_language_code: str = "en_GB",
+        source_language_code: str = "en",
         private: bool = False,
         **kwargs,
     ):
         """Create a project."""
+        logger.info(
+            f"Trying to create project from these arguments: project_slug = {project_slug}, "
+        )
         source_language = tx_api.Language.get(code=source_language_code)
         project_name = project_name or project_slug
 
@@ -247,7 +250,9 @@ class Client(Tx):
     ):
         """Create a new language resource in the remote Transifex repository"""
         if project := self.get_project(project_slug=project_slug):
-            project.add("languages", [tx_api.Language.get(code=language_code)])
+            if language := tx_api.Language.get(code=language_code):
+                logger.debug(f"Adding {language.code} to {project_slug}")
+                project.add("languages", [language])
 
             if coordinators:
                 project.add("coordinators", coordinators)

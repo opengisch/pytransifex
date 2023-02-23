@@ -117,26 +117,6 @@ class TestNewApi(unittest.TestCase):
         logger.info(str(stats))
         assert stats
 
-    def test12_stats(self):
-        self.tx.get_project_stats(project_slug=self.project_slug)
-
-    def test13_stats(self):
-        self.tx.get_project_stats(project_slug=self.project_slug)
-
 
 if __name__ == "__main__":
     unittest.main()
-
-"""
-# Don't remove this!
-curl -g \
-    --request GET --url "https://rest.api.transifex.com/resource_language_stats?filter[project]=o%3Aopengisch%3Ap%3Aqfield-documentation" \
-    --header 'accept: application/vnd.api+json' \
-    --header 'authorization: Bearer TOKEN'
-
-curl -g \
-    --request GET \
-    --url "https://rest.api.transifex.com/resource_language_stats?filter[project]=o%3Atest_pytransifex%3Ap%3Atest_project_pytransifex" \
-    --header 'accept: application/vnd.api+json' \
-    --header 'authorization: Bearer TOKEN'
-"""
