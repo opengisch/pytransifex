@@ -9,13 +9,14 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
   workflow_call:
+
 
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-
       # Not using strategy.matrix to create multiple jobs
       # as we do NOT want to test with any form of concurrency
       # to avoid 'race conditions' against Transifex
