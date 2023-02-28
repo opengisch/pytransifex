@@ -1,0 +1,4 @@
+organization_slug = "pytransifex"
+project_slug = "pytransifex_test"
+output_directory = "/Users/denis/Documents/pytransifex/output"
+config_file = "/Users/denis/Documents/pytransifex/.pytx_config.yml"

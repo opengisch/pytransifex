@@ -9,18 +9,15 @@ from tests import logging, test_config
 logger = logging.getLogger(__name__)
 
 
-class TestNewApi(unittest.TestCase):
+class TestApi(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        client = Transifex(defer_login=True)
-        assert client
-
         cls.path_to_input_dir = Path.cwd().joinpath("tests", "data", "resources")
         cls.path_to_file = cls.path_to_input_dir.joinpath("test_resource_fr.po")
         cls.output_dir = Path.cwd().joinpath("tests", "output")
         cls.output_file = cls.output_dir.joinpath("test_resource_fr_DOWNLOADED.po")
 
-        cls.tx = client
+        cls.tx = Transifex(defer_login=True)
         cls.project_slug = test_config["project_slug"]
         cls.project_name = test_config["project_name"]
         cls.resource_slug = test_config["resource_slug"]
@@ -33,6 +30,8 @@ class TestNewApi(unittest.TestCase):
 
         logger.info("Deleting test project if it already exists")
         cls.tx.delete_project(project_slug=cls.project_slug)
+
+        assert cls.tx.project_exists(cls.project_slug) is False
 
         logger.info("Creating a brand new project")
         cls.tx.create_project(
@@ -58,9 +57,7 @@ class TestNewApi(unittest.TestCase):
             resource_slug=self.resource_slug,
             path_to_file=str(self.path_to_file),
         )
-        assert True
 
-    def test4_list_resources(self):
         resources = self.tx.list_resources(project_slug=self.project_slug)
         logger.info(f"Resources found: {resources}")
         assert resources
@@ -71,12 +68,9 @@ class TestNewApi(unittest.TestCase):
             path_to_file=str(self.path_to_file),
             resource_slug=self.resource_slug,
         )
-        assert True
 
     def test6_create_language(self):
         self.tx.create_language(project_slug=self.project_slug, language_code="fr_CH")
-
-    def test7_list_languages(self):
         languages = self.tx.list_languages(project_slug=self.project_slug)
         logger.info(f"Languages found: {languages}")
         assert languages

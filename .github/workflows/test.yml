@@ -35,34 +35,8 @@ jobs:
           python -m pip install -U -r requirements/base.txt
           python -m pip install -U -r requirements/dev.txt
 
-      - name: Test API
+      - name: Tests
         env:
-          organization: ${{ secrets.ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_api.py
-
-      - name: Test CLI
-        env:
-          organization: ${{ secrets.ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_cli.py
-
-      - name: Test with a public project
-        env:
-          organization: ${{ secrets.ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_public_project.py
-
-      - name: Test with Qgisplugin's 'test_translation'
-        env:
-          organization: ${{ secrets.ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_translation.py
+          TX_ORGANIZATION: ${{ secrets.TX_ORGANIZATION }}
+          TX_TOKEN: ${{ secrets.TX_TOKEN }}
+        run: nose2 -v
