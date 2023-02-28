@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 class ApiConfig(NamedTuple):
     api_token: str
     organization_name: str
-    i18n_type: str
+    i18n_type: str = "PO"
     host_name = "https://rest.api.transifex.com"
     project_slug: str | None = None
 
@@ -19,21 +19,21 @@ class ApiConfig(NamedTuple):
         load_dotenv()
 
         token = environ.get("TX_TOKEN")
-        organization = environ.get("ORGANIZATION")
+        organization = environ.get("TX_ORGANIZATION")
         i18n_type = environ.get("I18N_TYPE", "PO")
 
         if faulty := next(
             filter(
                 lambda v: not v[1],
                 zip(
-                    ["token", "organization", "i18_ntype"],
-                    [token, organization, i18n_type],
+                    ["token", "organization"],
+                    [token, organization],
                 ),
             ),
             None,
         ):
             raise ValueError(
-                f"Envars 'TX_TOKEN', 'ORGANIZATION' and 'I18N_TYPE must be set to non-empty values, yet this one was found missing ('None' or empty string): {faulty[0]}"
+                f"Envars 'TX_TOKEN' and 'TX_ORGANIZATION', yet this one was found missing ('None' or empty string): {faulty[0]}"
             )
 
         return cls(token, organization, i18n_type)  # type: ignore

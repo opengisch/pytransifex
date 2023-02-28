@@ -42,15 +42,13 @@ class Client(Tx):
         self.logged_in = True
 
         # Saving organization and projects to avoid round-trips
-        organization = tx_api.Organization.get(slug=self.organization_name)
-        self.projects = organization.fetch("projects")
-        self.organization = organization
+        self.organization = tx_api.Organization.get(slug=self.organization_name)
+        self.projects = self.organization.fetch("projects")
         logger.info(f"Logged in as organization: {self.organization_name}")
 
     @ensure_login
     def create_project(
         self,
-        *,
         project_slug: str,
         project_name: str | None = None,
         source_language_code: str = "en",
@@ -370,18 +368,12 @@ class Transifex:
 
     def __new__(cls, *, defer_login: bool = False, **kwargs) -> Optional["Client"]:
         if not cls.client:
-            try:
-                if kwargs:
-                    config = ApiConfig(**kwargs)
-                else:
-                    logger.info(
-                        f"As you called 'Transifex' without argument, we'll try defining your project from environment variables."
-                    )
-                    config = ApiConfig.from_env()
+            if kwargs:
+                config = ApiConfig(**kwargs)
+            else:
+                logger.info(
+                    f"As you called 'Transifex' without argument, we'll try defining your project from environment variables."
+                )
+                config = ApiConfig.from_env()
 
-                return Client(config, defer_login)
-
-            except ValueError as error:
-                available = list(ApiConfig._fields)
-                msg = f"Unable to define a proper config. API initialization uses the following fields, with only 'project_slug' optional: {available}"
-                logger.error(f"{msg}:\n{error}")
+            return Client(config, defer_login)

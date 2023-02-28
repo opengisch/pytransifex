@@ -2,6 +2,8 @@
 docs/_build/
 docs/_autosummary/
 
+.tokens
+
 __pycache__/
 venv/
 

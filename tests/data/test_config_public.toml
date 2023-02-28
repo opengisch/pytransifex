@@ -1,5 +1,4 @@
-organization_slug = "test_pytransifex"
-project_slug = "test_project_pytransifex_public"
+project_slug = "pytransifex_test_public"
 project_name = "Python Transifex API testing (public)"
 repository_url = "https://github.com/opengisch/pytransifex"
 resource_slug = "test_resource_fr"

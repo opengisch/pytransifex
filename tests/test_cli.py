@@ -54,7 +54,7 @@ class TestCli(unittest.TestCase):
     def test1_init(self):
         result = self.runner.invoke(
             cli,
-            ["init", "-p", self.project_slug, "-org", "test_pytransifex"],
+            ["init", "-p", self.project_slug, "-org", "pytransifex"],
         )
         passed = result.exit_code == 0
         assert passed
