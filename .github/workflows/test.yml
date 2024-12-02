@@ -37,7 +37,7 @@ jobs:
 
       - name: Test API
         env:
-          organization: ${{ secrets.ORGANIZATION }}
+          organization: ${{ secrets.TX_ORGANIZATION }}
           tx_token: ${{ secrets.TX_TOKEN }}
         run: |
           TX_TOKEN=$tx_token ORGANIZATION=$organization \
@@ -45,7 +45,7 @@ jobs:
 
       - name: Test CLI
         env:
-          organization: ${{ secrets.ORGANIZATION }}
+          organization: ${{ secrets.TX_ORGANIZATION }}
           tx_token: ${{ secrets.TX_TOKEN }}
         run: |
           TX_TOKEN=$tx_token ORGANIZATION=$organization \
@@ -53,7 +53,7 @@ jobs:
 
       - name: Test with a public project
         env:
-          organization: ${{ secrets.ORGANIZATION }}
+          organization: ${{ secrets.TX_ORGANIZATION }}
           tx_token: ${{ secrets.TX_TOKEN }}
         run: |
           TX_TOKEN=$tx_token ORGANIZATION=$organization \
@@ -61,7 +61,7 @@ jobs:
 
       - name: Test with Qgisplugin's 'test_translation'
         env:
-          organization: ${{ secrets.ORGANIZATION }}
+          organization: ${{ secrets.TX_ORGANIZATION }}
           tx_token: ${{ secrets.TX_TOKEN }}
         run: |
           TX_TOKEN=$tx_token ORGANIZATION=$organization \
