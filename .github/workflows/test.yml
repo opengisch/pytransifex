@@ -40,3 +40,5 @@ jobs:
           TX_ORGANIZATION: ${{ secrets.TX_ORGANIZATION }}
           TX_TOKEN: ${{ secrets.TX_TOKEN }}
         run: nose2 -v
+
+      - uses: mxschmitt/action-tmate@v3
