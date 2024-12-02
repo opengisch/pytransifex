@@ -2,6 +2,8 @@ import unittest
 from pathlib import Path
 from shutil import rmtree
 
+from transifex.api.jsonapi.exceptions import DoesNotExist
+
 from pytransifex.api import Transifex
 from pytransifex.interfaces import Tx
 from tests import logging, test_config
@@ -32,7 +34,10 @@ class TestNewApi(unittest.TestCase):
             )
 
         logger.info("Deleting test project if it already exists")
-        cls.tx.delete_project(project_slug=cls.project_slug)
+        try:
+            cls.tx.delete_project(project_slug=cls.project_slug)
+        except DoesNotExist:
+            pass
 
         logger.info("Creating a brand new project")
         cls.tx.create_project(
