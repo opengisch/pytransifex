@@ -23,6 +23,7 @@ class TestTranslation(unittest.TestCase):
         )
         with open(config_yaml) as f:
             arg_dict = yaml.safe_load(f)
+        arg_dict["transifex_organization"] = os.getenv("TX_ORGANIZATION")
 
         cls.parameters = Parameters(**arg_dict)
         cls.t = Translation(cls.parameters, transifex_token=transifex_token)

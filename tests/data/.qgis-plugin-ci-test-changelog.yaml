@@ -1,5 +1,5 @@
-project_slug: test_project_pytransifex_public
-transifex_organization: test_pytransifex
+project_slug: pytransifex_test_public
+transifex_organization: pytransifex
 transifex_coordinator: john_doe
 translation_languages:
   - fr

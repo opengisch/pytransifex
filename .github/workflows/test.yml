@@ -15,6 +15,9 @@ on:
 
 jobs:
   tests:
+    env:
+      TX_ORGANIZATION: ${{ secrets.TX_ORGANIZATION }}
+      TX_TOKEN: ${{ secrets.TX_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       # Not using strategy.matrix to create multiple jobs
@@ -35,34 +38,11 @@ jobs:
           python -m pip install -U -r requirements/base.txt
           python -m pip install -U -r requirements/dev.txt
 
-      - name: Test API
+      - name: Tests
         env:
-          organization: ${{ secrets.TX_ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_api.py
+          TX_ORGANIZATION: ${{ secrets.TX_ORGANIZATION }}
+          TX_TOKEN: ${{ secrets.TX_TOKEN }}
+        run: nose2 -v
 
-      - name: Test CLI
-        env:
-          organization: ${{ secrets.TX_ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_cli.py
-
-      - name: Test with a public project
-        env:
-          organization: ${{ secrets.TX_ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_public_project.py
-
-      - name: Test with Qgisplugin's 'test_translation'
-        env:
-          organization: ${{ secrets.TX_ORGANIZATION }}
-          tx_token: ${{ secrets.TX_TOKEN }}
-        run: |
-          TX_TOKEN=$tx_token ORGANIZATION=$organization \
-            python -m unittest ./tests/test_translation.py
+      - uses: mxschmitt/action-tmate@v3
+        if: failure()
