@@ -3,3 +3,4 @@ click
 transifex-python
 python-dotenv
 toml
+six
